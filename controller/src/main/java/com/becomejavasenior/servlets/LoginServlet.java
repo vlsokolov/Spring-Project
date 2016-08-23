@@ -38,7 +38,7 @@ public class LoginServlet extends HttpServlet {
         String password = req.getParameter("password");
         String fromPage = req.getParameter("fromPage");
 
-        if (fromPage == null || fromPage.isEmpty()) {
+        if (fromPage == null || fromPage.isEmpty() || fromPage.equals("/")) {
             //todo go to dashboard
             fromPage = "/logout";
         }

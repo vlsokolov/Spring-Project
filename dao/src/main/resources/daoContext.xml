@@ -29,4 +29,8 @@
         <constructor-arg ref="dataSource"/>
     </bean>
 
+    <bean id="contactDAOJdbcImpl" class="com.becomejavasenior.jdbc.jdbcTemplate.ContactDAOJdbcImpl">
+        <constructor-arg ref="dataSource"/>
+    </bean>
+
 </beans>

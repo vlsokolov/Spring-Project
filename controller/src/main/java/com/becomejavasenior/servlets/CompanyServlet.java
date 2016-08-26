@@ -3,10 +3,12 @@ package com.becomejavasenior.servlets;
 import com.becomejavasenior.entity.*;
 import com.becomejavasenior.entity.File;
 import com.becomejavasenior.service.CompanyService;
-import com.becomejavasenior.service.impl.CompanyServiceImpl;
 import com.google.common.base.Splitter;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
@@ -23,7 +25,22 @@ import java.util.*;
 @WebServlet(name = "companyServlet", urlPatterns = "/company")
 @MultipartConfig
 public class CompanyServlet extends HttpServlet {
-    private CompanyService companyService = new CompanyServiceImpl();
+
+    private ConfigurableApplicationContext context;
+    private CompanyService companyService;
+
+    @Override
+    public void init(ServletConfig config) throws ServletException{
+        super.init(config);
+        context = new ClassPathXmlApplicationContext("controllerContext.xml");
+        companyService = context.getBean(CompanyService.class);
+    }
+
+    @Override
+    public void destroy() {
+        context.close();
+        super.destroy();
+    }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

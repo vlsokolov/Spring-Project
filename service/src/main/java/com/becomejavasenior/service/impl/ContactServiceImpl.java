@@ -73,7 +73,9 @@ public class ContactServiceImpl implements ContactService {
         currentUser.setId(1);
     }
 
-
+    public static ContactService createInstance() {
+        return new ContactServiceImpl();
+    }
 
     @Override
     public int insert(Contact contact) {

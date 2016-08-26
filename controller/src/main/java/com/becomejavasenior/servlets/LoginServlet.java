@@ -1,9 +1,12 @@
 package com.becomejavasenior.servlets;
 
 import com.becomejavasenior.entity.User;
-import com.becomejavasenior.service.impl.UserServiceImpl;
+import com.becomejavasenior.service.UserService;
 import org.apache.log4j.Logger;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
@@ -13,15 +16,32 @@ import java.util.Map;
 @WebServlet(name = "LoginServlet", urlPatterns = "/login")
 public class LoginServlet extends HttpServlet {
 
+    private ConfigurableApplicationContext context;
+    private UserService userService;
+    private Map<String, User> userMap;
+
+    @Override
+    public void init(ServletConfig config) throws ServletException{
+        super.init(config);
+        context = new ClassPathXmlApplicationContext("controllerContext.xml");
+        userService = context.getBean(UserService.class);
+        userMap = userService.getUserMap();
+    }
+
+    @Override
+    public void destroy() {
+        context.close();
+        super.destroy();
+    }
+
     private static final int MAX_INACTIVE_INTERVAL = 1800;
-    private static Map<String, User> userMap = new UserServiceImpl().getUserMap();
 
     @Override
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
 
         try {
             if (req.getParameter("updateUsers") != null) {
-                userMap = new UserServiceImpl().getUserMap();
+                userMap = userService.getUserMap();
             }
             req.getRequestDispatcher("/pages/authLogin.jsp").forward(req, res);
 

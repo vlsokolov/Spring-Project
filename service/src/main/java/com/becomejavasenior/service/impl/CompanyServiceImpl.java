@@ -30,6 +30,10 @@ public class CompanyServiceImpl implements CompanyService {
     @Autowired
     private FileDAO fileDAO;
 
+    public static CompanyService createInstance() {
+        return new CompanyServiceImpl();
+    }
+
     @Override
     public int insert(Company company) {
         return companyDAO.insert(company);

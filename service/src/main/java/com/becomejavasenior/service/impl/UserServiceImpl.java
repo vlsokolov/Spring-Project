@@ -2,30 +2,35 @@ package com.becomejavasenior.service.impl;
 
 import com.becomejavasenior.entity.Language;
 import com.becomejavasenior.entity.User;
+import com.becomejavasenior.jdbc.entity.LanguageDAO;
 import com.becomejavasenior.jdbc.entity.UserDAO;
 import com.becomejavasenior.jdbc.exceptions.DatabaseException;
-import com.becomejavasenior.jdbc.impl.LanguageDAOImpl;
-import com.becomejavasenior.jdbc.impl.UserDAOImpl;
 import com.becomejavasenior.service.UserService;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Service
 public class UserServiceImpl implements UserService {
+    private static final Logger LOG = Logger.getLogger(UserServiceImpl.class.getName());
 
     @Autowired
     private UserDAO userDAO;
     @Autowired
-    private LanguageDAOImpl languageDAO;
+    private LanguageDAO languageDAO;
 
-    public static UserServiceImpl createInstance(){
+    public static UserServiceImpl createInstance() {
         return new UserServiceImpl();
+    }
+
+    public void init() {
+        LOG.info("init()");
+    }
+
+    public void destroy() {
+        LOG.info("destroy()");
     }
 
     @Override

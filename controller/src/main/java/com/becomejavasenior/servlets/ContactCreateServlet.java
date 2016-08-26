@@ -3,8 +3,11 @@ package com.becomejavasenior.servlets;
 import com.becomejavasenior.service.ContactService;
 import com.becomejavasenior.service.impl.ContactServiceImpl;
 import org.apache.log4j.Logger;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
@@ -18,9 +21,25 @@ import java.io.UnsupportedEncodingException;
 @MultipartConfig(maxFileSize = 102400)
 public class ContactCreateServlet extends HttpServlet {
 
+    private ConfigurableApplicationContext context;
+    private ContactService contactService;
+
+    @Override
+    public void init(ServletConfig config) throws ServletException{
+        super.init(config);
+        context = new ClassPathXmlApplicationContext("controllerContext.xml");
+        contactService = context.getBean(ContactService.class);
+    }
+
+    @Override
+    public void destroy() {
+        context.close();
+        super.destroy();
+    }
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        ContactService contactService = new ContactServiceImpl();
+
         request.setAttribute("userList", contactService.getUserList());
         request.setAttribute("companyList", contactService.getCompanyList());
         request.setAttribute("stageList", contactService.getStageList());
@@ -39,7 +58,7 @@ public class ContactCreateServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        ContactService contactService = new ContactServiceImpl();
+
         try {
             request.setCharacterEncoding("UTF-8");
         } catch (UnsupportedEncodingException e) {

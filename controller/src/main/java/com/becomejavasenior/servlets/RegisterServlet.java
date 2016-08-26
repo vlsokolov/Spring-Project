@@ -1,8 +1,11 @@
 package com.becomejavasenior.servlets;
 
-import com.becomejavasenior.service.impl.UserServiceImpl;
+import com.becomejavasenior.service.UserService;
 import org.apache.log4j.Logger;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -15,11 +18,27 @@ public class RegisterServlet extends HttpServlet {
 
     private static final String URL_REGISTER = "/pages/authRegister.jsp";
 
+    private ConfigurableApplicationContext context;
+    private UserService userService;
+
+    @Override
+    public void init(ServletConfig config) throws ServletException{
+        super.init(config);
+        context = new ClassPathXmlApplicationContext("controllerContext.xml");
+        userService = context.getBean(UserService.class);
+    }
+
+    @Override
+    public void destroy() {
+        context.close();
+        super.destroy();
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         try {
-            req.setAttribute("languageList", new UserServiceImpl().getLanguageList());
+            req.setAttribute("languageList", userService.getLanguageList());
             req.getRequestDispatcher(URL_REGISTER).forward(req, resp);
 
         } catch (ServletException | IOException e) {
@@ -30,7 +49,7 @@ public class RegisterServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-        String serviceMessage = new UserServiceImpl().createNewUser(
+        String serviceMessage = userService.createNewUser(
                 req.getParameter("name"), req.getParameter("password"),
                 req.getParameter("email"), Integer.parseInt(req.getParameter("language")));
 

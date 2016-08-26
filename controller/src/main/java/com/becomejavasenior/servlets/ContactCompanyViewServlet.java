@@ -3,10 +3,12 @@ package com.becomejavasenior.servlets;
 import com.becomejavasenior.entity.Company;
 import com.becomejavasenior.entity.Contact;
 import com.becomejavasenior.service.ContactService;
-import com.becomejavasenior.service.impl.ContactServiceImpl;
 import org.apache.log4j.Logger;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -18,9 +20,25 @@ import java.util.List;
 @WebServlet(name = "contactCompanyViewServlet", urlPatterns = "/viewcompanies")
 public class ContactCompanyViewServlet extends HttpServlet {
 
+
+    private ContactService contactService;
+    private ConfigurableApplicationContext context;
+
+    @Override
+    public void init(ServletConfig config) throws ServletException{
+        super.init(config);
+        context = new ClassPathXmlApplicationContext("controllerContext.xml");
+        contactService = context.getBean(ContactService.class);
+    }
+
+    @Override
+    public void destroy() {
+        context.close();
+        super.destroy();
+    }
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        ContactService contactService = new ContactServiceImpl();
 
         List<Company> companyList = contactService.getCompanyList();
         companyList.sort((Company company1, Company company2) -> company1.getName().compareTo(company2.getName()));

@@ -2,7 +2,7 @@ package com.becomejavasenior.service;
 
 public interface ServiceFactory {
 
-    CompanyService createCompanyServiceInstance();
+    CompanyService getCompanyService();
 
-    ContactService createContactServiceInstance();
+    ContactService getContactService();
 }

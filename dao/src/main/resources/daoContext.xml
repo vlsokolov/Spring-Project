@@ -36,4 +36,8 @@
         <constructor-arg ref="dataSource"/>
     </bean>
 
+    <bean id="userDAOJdbcImpl" class="com.becomejavasenior.jdbc.jdbcTemplate.UserDAOJdbcImpl">
+        <constructor-arg ref="dataSource"/>
+    </bean>
+
 </beans>

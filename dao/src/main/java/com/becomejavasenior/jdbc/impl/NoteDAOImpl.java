@@ -5,13 +5,17 @@ import com.becomejavasenior.jdbc.entity.NoteDAO;
 import com.becomejavasenior.jdbc.exceptions.DatabaseException;
 import com.becomejavasenior.jdbc.factory.PostgresDAOFactory;
 import org.apache.commons.dbcp2.Utils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
 
+import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 //import java.util.logging.Level;
 //import java.util.logging.Logger;
 
+@Repository("noteDao")
 public class NoteDAOImpl extends AbstractDAO<Note> implements NoteDAO {
 
     //private final static Logger logger = Logger.getLogger(CompanyDAOImpl.class.getName());
@@ -31,7 +35,7 @@ public class NoteDAOImpl extends AbstractDAO<Note> implements NoteDAO {
         }
         int id;
 
-        try (Connection connection = PostgresDAOFactory.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(INSERT_SQL, Statement.RETURN_GENERATED_KEYS)) {
 
             statement.setInt(1, note.getCreator().getId());
@@ -67,7 +71,7 @@ public class NoteDAOImpl extends AbstractDAO<Note> implements NoteDAO {
         if (note.getId() == 0) {
             throw new DatabaseException("note must be created before update");
         }
-        try (Connection connection = PostgresDAOFactory.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(UPDATE_SQL)) {
 
             statement.setInt(1, note.getCreator().getId());
@@ -95,7 +99,7 @@ public class NoteDAOImpl extends AbstractDAO<Note> implements NoteDAO {
         Note note;
         User creator;
 
-        try (Connection connection = PostgresDAOFactory.getConnection();
+        try (Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery(SELECT_ALL_SQL)) {
 
@@ -141,7 +145,7 @@ public class NoteDAOImpl extends AbstractDAO<Note> implements NoteDAO {
         Note note;
         User creator;
 
-        try (Connection connection = PostgresDAOFactory.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(SELECT_ALL_SQL + " AND id = ?")) {
 
             statement.setInt(1, id);

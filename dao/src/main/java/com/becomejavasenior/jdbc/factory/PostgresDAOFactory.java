@@ -9,9 +9,9 @@ import java.sql.SQLException;
 
 public class PostgresDAOFactory extends AbstractDAOFactory {
 
-    public static Connection getConnection() throws SQLException {
+   /*     public static Connection getConnection() throws SQLException {
         return ConnectionPool.getConnection();
-    }
+    }*/
 
     @Override
     public CompanyDAO getCompanyDAO() {

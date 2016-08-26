@@ -3,13 +3,13 @@ package com.becomejavasenior.jdbc.impl;
 import com.becomejavasenior.entity.*;
 import com.becomejavasenior.jdbc.entity.VisitHistoryDAO;
 import com.becomejavasenior.jdbc.exceptions.DatabaseException;
-import com.becomejavasenior.jdbc.factory.PostgresDAOFactory;
-
+import org.springframework.stereotype.Repository;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+@Repository
 public class VisitHistoryDAOImpl extends AbstractDAO<VisitHistory> implements VisitHistoryDAO {
 
     private static final String INSERT_SQL = "INSERT INTO visit_history (user_id, date_create, ip_address," +
@@ -36,7 +36,7 @@ public class VisitHistoryDAOImpl extends AbstractDAO<VisitHistory> implements Vi
         }
         int id;
 
-        try (Connection connection = PostgresDAOFactory.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(INSERT_SQL, Statement.RETURN_GENERATED_KEYS)) {
 
             statement.setInt(1, visitHistory.getUser().getId());
@@ -62,7 +62,7 @@ public class VisitHistoryDAOImpl extends AbstractDAO<VisitHistory> implements Vi
         if (visitHistory.getId() == 0) {
             throw new DatabaseException("VisitHistory must be created before update");
         }
-        try (Connection connection = PostgresDAOFactory.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement updateStatement = connection.prepareStatement(UPDATE_SQL)) {
 
             updateStatement.setInt(1, visitHistory.getUser().getId());
@@ -85,7 +85,7 @@ public class VisitHistoryDAOImpl extends AbstractDAO<VisitHistory> implements Vi
     @Override
     public List<VisitHistory> getAll() {
 
-        try (Connection connection = PostgresDAOFactory.getConnection();
+        try (Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery(SELECT_ALL_SQL)) {
             return parseResultSet(resultSet);
@@ -97,7 +97,7 @@ public class VisitHistoryDAOImpl extends AbstractDAO<VisitHistory> implements Vi
     @Override
     public VisitHistory getById(int id) {
 
-        try (Connection connection = PostgresDAOFactory.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(SELECT_ALL_SQL + " AND id = ?")) {
             statement.setInt(1, id);
             List<VisitHistory> visitHistoryList = parseResultSet(statement.executeQuery());

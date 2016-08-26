@@ -1,13 +1,15 @@
 package com.becomejavasenior.jdbc.impl;
 
 import com.becomejavasenior.jdbc.exceptions.DatabaseException;
-import com.becomejavasenior.jdbc.factory.PostgresDAOFactory;
 import com.becomejavasenior.jdbc.entity.GenericDAO;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
+
 //import java.util.logging.Level;
 //import java.util.logging.Logger;
 
@@ -23,6 +25,9 @@ abstract class AbstractDAO<T> implements GenericDAO<T> {
 
     static final String FIELD_ID = "id";
     static final String FIELD_NAME = "name";
+
+    @Autowired
+    protected DataSource dataSource;
 
     @Override
     abstract public int insert(T o);
@@ -40,8 +45,8 @@ abstract class AbstractDAO<T> implements GenericDAO<T> {
 
         final String DELETE_SQL = "UPDATE " + tableName + " SET deleted = TRUE WHERE id = ?";
 
-        try (Connection connection = PostgresDAOFactory.getConnection();
-            PreparedStatement statement = connection.prepareStatement(DELETE_SQL)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(DELETE_SQL)) {
 
             statement.setInt(1, id);
             statement.executeUpdate();

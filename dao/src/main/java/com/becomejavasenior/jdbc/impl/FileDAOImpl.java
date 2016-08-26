@@ -5,13 +5,17 @@ import com.becomejavasenior.jdbc.entity.FileDAO;
 import com.becomejavasenior.jdbc.exceptions.DatabaseException;
 import com.becomejavasenior.jdbc.factory.PostgresDAOFactory;
 import org.apache.commons.dbcp2.Utils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
 
+import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 //import java.util.logging.Level;
 //import java.util.logging.Logger;
 
+@Repository("fileDao")
 public class FileDAOImpl extends AbstractDAO<File> implements FileDAO {
 
     //private final static Logger logger = Logger.getLogger(CompanyDAOImpl.class.getName());
@@ -31,7 +35,7 @@ public class FileDAOImpl extends AbstractDAO<File> implements FileDAO {
         }
         int id;
 
-        try (Connection connection = PostgresDAOFactory.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(INSERT_SQL, Statement.RETURN_GENERATED_KEYS)) {
 
             statement.setInt(1, file.getCreator().getId());
@@ -71,7 +75,7 @@ public class FileDAOImpl extends AbstractDAO<File> implements FileDAO {
         if (file.getId() == 0) {
             throw new DatabaseException("file must be created before update");
         }
-        try (Connection connection = PostgresDAOFactory.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(UPDATE_SQL)) {
 
             statement.setInt(1, file.getCreator().getId());
@@ -102,7 +106,7 @@ public class FileDAOImpl extends AbstractDAO<File> implements FileDAO {
         File file;
         User creator;
 
-        try (Connection connection = PostgresDAOFactory.getConnection();
+        try (Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery(SELECT_ALL_SQL)) {
 
@@ -153,7 +157,7 @@ public class FileDAOImpl extends AbstractDAO<File> implements FileDAO {
         File file;
         User creator;
 
-        try (Connection connection = PostgresDAOFactory.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(SELECT_ALL_SQL + " AND id = ?")) {
 
             statement.setInt(1, id);

@@ -5,18 +5,30 @@ import com.becomejavasenior.jdbc.entity.*;
 import com.becomejavasenior.jdbc.factory.AbstractDAOFactory;
 import com.becomejavasenior.jdbc.factory.PostgresDAOFactory;
 import com.becomejavasenior.service.CompanyService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 
+@Service
 public class CompanyServiceImpl implements CompanyService {
-    private final CompanyDAO companyDAO = PostgresDAOFactory.getDAOFactory(AbstractDAOFactory.POSTGRESQL).getCompanyDAO();
-    private final UserDAO userDAO = PostgresDAOFactory.getDAOFactory(AbstractDAOFactory.POSTGRESQL).getUserDAO();
-    private final ContactDAO contactDAO = PostgresDAOFactory.getDAOFactory(AbstractDAOFactory.POSTGRESQL).getContactDAO();
-    private final TaskDAO taskDAO = PostgresDAOFactory.getDAOFactory(AbstractDAOFactory.POSTGRESQL).getTaskDAO();
-    private final DealDAO dealDAO = PostgresDAOFactory.getDAOFactory(AbstractDAOFactory.POSTGRESQL).getDealDAO();
-    private final NoteDAO noteDAO = PostgresDAOFactory.getDAOFactory(AbstractDAOFactory.POSTGRESQL).getNoteDAO();
-    private final TagDAO tagDAO = PostgresDAOFactory.getDAOFactory(AbstractDAOFactory.POSTGRESQL).getTagDAO();
-    private final FileDAO fileDAO = PostgresDAOFactory.getDAOFactory(AbstractDAOFactory.POSTGRESQL).getFileDAO();
+
+    @Autowired
+    private CompanyDAO companyDAO;
+    @Autowired
+    private ContactDAO contactDAO;
+    @Autowired
+    private UserDAO userDAO;
+    @Autowired
+    private TaskDAO taskDAO;
+    @Autowired
+    private DealDAO dealDAO;
+    @Autowired
+    private NoteDAO noteDAO;
+    @Autowired
+    private TagDAO tagDAO;
+    @Autowired
+    private FileDAO fileDAO;
 
     @Override
     public int insert(Company company) {

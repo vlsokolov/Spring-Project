@@ -4,12 +4,18 @@ import com.becomejavasenior.entity.Company;
 import com.becomejavasenior.entity.User;
 import com.becomejavasenior.jdbc.ConnectionPool;
 import com.becomejavasenior.jdbc.entity.CompanyDAO;
+import com.becomejavasenior.jdbc.entity.UserDAO;
 import com.becomejavasenior.jdbc.factory.PostgresDAOFactory;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -17,10 +23,17 @@ import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 
+import static com.becomejavasenior.jdbc.ConnectionPool.getConnection;
+
+@Component
 public class CompanyDAOTest {
 
     private final PostgresDAOFactory factory;
+    @Autowired
     private CompanyDAO companyDAO;
+    @Autowired
+    private UserDAO userDAO;
+
     private User userForCompanyTest;
     private static final String DEFAULT_NAME = "Default Name";
     private static final String DEFAULT_PHONE = "Default Phone Number";
@@ -29,21 +42,25 @@ public class CompanyDAOTest {
     private static final Timestamp DEFAULT_DATE = new Timestamp(new Date().getTime());
     private int companyTestId;
 
+    @Autowired
+    private DataSource dataSource;
+
     public CompanyDAOTest() {
         factory = new PostgresDAOFactory();
-        userForCompanyTest = factory.getUserDAO().getById(1);
-        companyDAO = factory.getCompanyDAO();
+       // userForCompanyTest = factory.getUserDAO().getById(1);
+       // companyDAO = factory.getCompanyDAO();
     }
 
     @Before
     public void setUp() {
         companyTestId = 0;
+        userForCompanyTest = userDAO.getById(1);
     }
 
-    @After
+   @After
     public void tearDown() throws SQLException {
         if (companyTestId > 0) {
-            try (Connection connection = ConnectionPool.getConnection();
+            try (Connection connection = dataSource.getConnection();
                  Statement statement = connection.createStatement()) {
                 statement.executeUpdate("DELETE FROM company WHERE id = " + Integer.toString(companyTestId));
             } catch (SQLException e) {
@@ -94,7 +111,7 @@ public class CompanyDAOTest {
         String updatedAddress = "Updated Company Address";
         String updatedWeb = "http://updated.www.address";
         Date updatedCreateDate = new Timestamp(1L << 41);
-        User userForTestUpdate = factory.getUserDAO().getById(2);
+        User userForTestUpdate = userDAO.getById(2);
 
         Company companyTest = new Company();
         companyTest.setName(DEFAULT_NAME);

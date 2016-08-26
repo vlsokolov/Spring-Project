@@ -5,6 +5,8 @@ import com.becomejavasenior.jdbc.entity.*;
 import com.becomejavasenior.jdbc.exceptions.DatabaseException;
 import com.becomejavasenior.jdbc.impl.*;
 import com.becomejavasenior.service.ContactService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import javax.servlet.http.Part;
 import java.io.ByteArrayOutputStream;
@@ -16,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Service
 public class ContactServiceImpl implements ContactService {
 
     private static final String STR_0 = "0";
@@ -49,15 +52,28 @@ public class ContactServiceImpl implements ContactService {
     private static final String TASK_TEXT = "task_text";
     private static final String TASK_STATUS_NEW = "В работе";
 
+    @Autowired
     private ContactDAO contactDAO;
+    @Autowired
+    private UserDAO userDAO;
+
     private User currentUser;
+    @Autowired
+    private CompanyDAO companyDAO;
+    @Autowired
+    private StageDAO stageDAO;
+    @Autowired
+    private TaskDAO taskDAO;
+    @Autowired
+    private TagDAO tagDAO;
 
     public ContactServiceImpl() {
-        this.contactDAO = new ContactDAOImpl();
         //todo replace with current user
-        currentUser = new User();
+        currentUser = (User) userDAO;
         currentUser.setId(1);
     }
+
+
 
     @Override
     public int insert(Contact contact) {
@@ -86,23 +102,21 @@ public class ContactServiceImpl implements ContactService {
 
     @Override
     public List<User> getUserList() {
-        return new UserDAOImpl().getAll();
+        return userDAO.getAll();
     }
 
     @Override
     public List<Company> getCompanyList() {
-        return new CompanyDAOImpl().getAll();
+        return companyDAO.getAll();
     }
 
     @Override
     public List<Stage> getStageList() {
-        return new StageDAOImpl().getAll();
+        return stageDAO.getAll();
     }
 
     @Override
-    public List<String> getTaskTypesList() {
-        return new TaskDAOImpl().getAllTaskType();
-    }
+    public List<String> getTaskTypesList() { return taskDAO.getAllTaskType(); }
 
     @Override
     public TypeOfPhone[] getPhoneTypes() {
@@ -115,9 +129,7 @@ public class ContactServiceImpl implements ContactService {
     }
 
     @Override
-    public List<Tag> getTagList() {
-        return new TagDAOImpl().getAll();
-    }
+    public List<Tag> getTagList() { return tagDAO.getAll();   }
 
     @Override
     public List<String> getTaskTimeList() {

@@ -8,22 +8,29 @@ import com.becomejavasenior.jdbc.impl.LanguageDAOImpl;
 import com.becomejavasenior.jdbc.impl.UserDAOImpl;
 import com.becomejavasenior.service.UserService;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Service
 public class UserServiceImpl implements UserService {
 
+    @Autowired
     private UserDAO userDAO;
+    @Autowired
+    private LanguageDAOImpl languageDAO;
 
-    public UserServiceImpl() {
-        this.userDAO = new UserDAOImpl();
+    public static UserServiceImpl createInstance(){
+        return new UserServiceImpl();
     }
 
     @Override
     public List<Language> getLanguageList() {
-        return new LanguageDAOImpl().getAll();
+        return languageDAO.getAll();
     }
 
     @Override
@@ -45,7 +52,7 @@ public class UserServiceImpl implements UserService {
         if (userMap.containsKey(email)) {
             errorString = "учетная запись '".concat(email).concat("' уже существует");
         }
-        Language language = new LanguageDAOImpl().getById(langId);
+        Language language = languageDAO.getById(langId);
         if (language == null) {
             errorString = errorString.concat(errorString.isEmpty() ? "" : ", ")
                     .concat("выбранный язык не используется");

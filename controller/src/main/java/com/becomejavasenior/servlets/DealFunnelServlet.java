@@ -28,7 +28,7 @@ public class DealFunnelServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException{
         super.init(config);
-        context = new ClassPathXmlApplicationContext("controllerContext.xml");
+        context = new ClassPathXmlApplicationContext("applicationContext.xml");
         dealService = context.getBean(DealService.class);
     }
 

@@ -1,6 +1,6 @@
-SET SEARCH_PATH TO public;
+-- SET SEARCH_PATH TO public;
 
-INSERT INTO language VALUES
+INSERT INTO "language" VALUES
   (1, 'Українська', 'UA', FALSE),
   (2, 'Русский', 'RU', FALSE),
   (3, 'English', 'EN', FALSE);

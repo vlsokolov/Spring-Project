@@ -10,19 +10,19 @@
     <bean id="serviceFactory" class="com.becomejavasenior.service.impl.ServiceFactoryImpl" />
 
     <bean id="companyService" class="com.becomejavasenior.service.impl.CompanyServiceImpl"
-          factory-method="createInstance" lazy-init="true" />
+          factory-method="createInstance" lazy-init="true" autowire="byName"/>
 
     <bean id="contactService" class="com.becomejavasenior.service.impl.ContactServiceImpl"
-          factory-method="createInstance" lazy-init="true" />
+          factory-method="createInstance" lazy-init="true" autowire="byName"/>
 
     <bean id="dealService" class="com.becomejavasenior.service.impl.DealServiceImpl"
           factory-bean="serviceFactory" factory-method="getDealService"
-          scope="singleton" />
+          scope="singleton" autowire="byType"/>
 
     <bean id="userService" class="com.becomejavasenior.service.impl.UserServiceImpl"
           factory-bean="serviceFactory" factory-method="getUserService"
           init-method="init"
           destroy-method="destroy"
-          scope="prototype" />
+          scope="prototype" autowire="byType"/>
 
 </beans>

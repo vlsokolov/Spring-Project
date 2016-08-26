@@ -14,7 +14,7 @@ import java.util.Map;
 //import java.util.logging.Level;
 //import java.util.logging.Logger;
 
-@Repository
+
 public class DealDAOImpl extends AbstractDAO<Deal> implements DealDAO {
 
     //private final static Logger logger = Logger.getLogger(CompanyDAOImpl.class.getName());

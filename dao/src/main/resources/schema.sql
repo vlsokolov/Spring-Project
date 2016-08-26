@@ -2,8 +2,10 @@
 -- Make sure your connection now
 -- is to database "crm-crius" !
 
-CREATE SCHEMA IF NOT EXISTS public;
-SET SEARCH_PATH TO public;
+-- CREATE SCHEMA IF NOT EXISTS public;
+-- SET SEARCH_PATH TO public;
+-- For hsqldb
+SET DATABASE SQL SYNTAX PGS TRUE;
 
 CREATE TABLE IF NOT EXISTS stage_deals (
   id INT NOT NULL,
@@ -32,12 +34,12 @@ CREATE TABLE IF NOT EXISTS "user" (
   mobile_phone VARCHAR(45),
   note VARCHAR(300),
   deleted BOOLEAN,
-  image BYTEA,
+  image BINARY,
   url VARCHAR(255),
   language_id INT NOT NULL,
   PRIMARY KEY (id),
     FOREIGN KEY (language_id)
-    REFERENCES language (id)
+    REFERENCES "language" (id)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION);
 
@@ -223,7 +225,7 @@ CREATE TABLE IF NOT EXISTS attached_file (
   filesize INT,
   deleted BOOLEAN,
   url_file VARCHAR(255) NULL,
-  file BYTEA,
+  file BINARY,
   contact_id INT,
   company_id INT,
   deal_id INT,

@@ -10,7 +10,6 @@
 
     <import resource="database.xml"/>
 
-
     <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
         <constructor-arg ref="dataSource"/>
     </bean>
@@ -30,6 +29,10 @@
     </bean>
 
     <bean id="contactDAOJdbcImpl" class="com.becomejavasenior.jdbc.jdbcTemplate.ContactDAOJdbcImpl">
+        <constructor-arg ref="dataSource"/>
+    </bean>
+
+    <bean id="companyDAOJdbcImpl" class="com.becomejavasenior.jdbc.jdbcTemplate.CompanyDAOJdbcImpl">
         <constructor-arg ref="dataSource"/>
     </bean>
 

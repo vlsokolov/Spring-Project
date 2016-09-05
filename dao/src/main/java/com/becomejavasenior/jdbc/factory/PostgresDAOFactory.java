@@ -18,10 +18,10 @@ public class PostgresDAOFactory extends AbstractDAOFactory {
         return new CompanyDAOImpl();
     }
 
-    @Override
+    /*@Override
     public ContactDAO getContactDAO() {
         return new ContactDAOImpl();
-    }
+    }*/
 
     @Override
     public DealDAO getDealDAO() {

@@ -7,7 +7,7 @@ public abstract class AbstractDAOFactory {
     public static final int POSTGRESQL = 1;
 
     public abstract CompanyDAO getCompanyDAO();
-    public abstract ContactDAO getContactDAO();
+ //   public abstract ContactDAO getContactDAO();
     public abstract DealDAO getDealDAO();
     public abstract FileDAO getFileDAO();
     public abstract NoteDAO getNoteDAO();

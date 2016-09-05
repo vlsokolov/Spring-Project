@@ -3,19 +3,19 @@ package com.becomejavasenior.jdbc.impl;
 import com.becomejavasenior.entity.*;
 import com.becomejavasenior.jdbc.entity.NoteDAO;
 import com.becomejavasenior.jdbc.exceptions.DatabaseException;
-import com.becomejavasenior.jdbc.factory.PostgresDAOFactory;
-import org.apache.commons.dbcp2.Utils;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.core.PreparedStatementSetter;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
-import javax.sql.DataSource;
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
 //import java.util.logging.Level;
 //import java.util.logging.Logger;
 
-@Repository("noteDao")
+@Repository
 public class NoteDAOImpl extends AbstractDAO<Note> implements NoteDAO {
 
     //private final static Logger logger = Logger.getLogger(CompanyDAOImpl.class.getName());
@@ -33,30 +33,19 @@ public class NoteDAOImpl extends AbstractDAO<Note> implements NoteDAO {
         if (note.getId() != 0) {
             throw new DatabaseException("note id must be obtained from DB");
         }
-        int id;
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(INSERT_SQL, Statement.RETURN_GENERATED_KEYS)) {
-
+        PreparedStatementCreator preparedStatementCreator = connection -> {
+            PreparedStatement statement = connection.prepareStatement(INSERT_SQL, new String[]{"id"});
             statement.setInt(1, note.getCreator().getId());
             statement.setString(2, note.getNote());
             statement.setTimestamp(3, new java.sql.Timestamp(note.getDateCreate() == null ? System.currentTimeMillis() : note.getDateCreate().getTime()));
             statement.setObject(4, note.getDeal() == null ? null : note.getDeal().getId(), Types.INTEGER);
             statement.setObject(5, note.getCompany() == null ? null : note.getCompany().getId(), Types.INTEGER);
             statement.setObject(6, note.getContact() == null ? null : note.getContact().getId(), Types.INTEGER);
-
-            if (1 == statement.executeUpdate() && statement.getGeneratedKeys().next()) {
-                id = statement.getGeneratedKeys().getInt(FIELD_ID);
-                note.setId(id);
-            } else {
-                throw new DatabaseException("Can't get note id from database.");
-            }
-            //logger.log(Level.INFO, "INSERT NEW NOTE " + note.toString());
-
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException(ex);
-        }
+            return statement;
+        };
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(preparedStatementCreator, keyHolder);
+        int id = (int) keyHolder.getKey().longValue();
         return id;
     }
 
@@ -71,9 +60,7 @@ public class NoteDAOImpl extends AbstractDAO<Note> implements NoteDAO {
         if (note.getId() == 0) {
             throw new DatabaseException("note must be created before update");
         }
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(UPDATE_SQL)) {
-
+        PreparedStatementSetter preparedStatementSetter = statement -> {
             statement.setInt(1, note.getCreator().getId());
             statement.setString(2, note.getNote());
             statement.setTimestamp(3, new java.sql.Timestamp(note.getDateCreate().getTime()));
@@ -82,115 +69,45 @@ public class NoteDAOImpl extends AbstractDAO<Note> implements NoteDAO {
             statement.setObject(6, note.getCompany() == null ? null : note.getCompany().getId(), Types.INTEGER);
             statement.setObject(7, note.getContact() == null ? null : note.getContact().getId(), Types.INTEGER);
             statement.setInt(8, note.getId());
-            statement.executeUpdate();
-
-            //logger.log(Level.INFO, "UPDATE NOTE " + note.toString());
-
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException(ex);
-        }
+        };
+        jdbcTemplate.update(UPDATE_SQL, preparedStatementSetter);
     }
 
     @Override
     public List<Note> getAll() {
-
-        List<Note> notes = new ArrayList<>();
-        Note note;
-        User creator;
-
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(SELECT_ALL_SQL)) {
-
-            while (resultSet.next()) {
-
-                note = new Note();
-                creator = new User();
-
-                note.setId(resultSet.getInt(FIELD_ID));
-                creator.setId(resultSet.getInt("created_by_id"));
-                note.setCreator(creator);
-                note.setNote(resultSet.getString("note"));
-                note.setDateCreate(resultSet.getTimestamp("date_create"));
-                note.setDelete(false);
-                if (resultSet.getObject("deal_id") != null) {
-                    Deal deal = new Deal();
-                    deal.setId(resultSet.getInt("deal_id"));
-                    note.setDeal(deal);
-                }
-                if (resultSet.getObject("company_id") != null) {
-                    Company company = new Company();
-                    company.setId(resultSet.getInt("company_id"));
-                    note.setCompany(company);
-                }
-                if (resultSet.getObject("contact_id") != null) {
-                    Contact contact = new Contact();
-                    contact.setId(resultSet.getInt("contact_id"));
-                    note.setContact(contact);
-                }
-                notes.add(note);
-            }
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException(ex);
-        }
-        return notes;
+        return jdbcTemplate.query(SELECT_ALL_SQL, NoteRowMapper);
     }
 
     @Override
     public Note getById(int id) {
+        return jdbcTemplate.queryForObject(SELECT_ALL_SQL + " AND id = ?", NoteRowMapper, id);
+    }
 
-        ResultSet resultSet = null;
-        Note note;
-        User creator;
+    private static final RowMapper<Note> NoteRowMapper = (resultSet, i) -> {
+        Note note = new Note();
+        User creator = new User();
 
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(SELECT_ALL_SQL + " AND id = ?")) {
-
-            statement.setInt(1, id);
-            resultSet = statement.executeQuery();
-
-            if (resultSet.next()) {
-
-                note = new Note();
-                creator = new User();
-
-                note.setId(resultSet.getInt(FIELD_ID));
-                creator.setId(resultSet.getInt("created_by_id"));
-                note.setCreator(creator);
-                note.setNote(resultSet.getString("note"));
-                note.setDateCreate(resultSet.getTimestamp("date_create"));
-                note.setDelete(false);
-                if (resultSet.getObject("deal_id") != null) {
-                    Deal deal = new Deal();
-                    deal.setId(resultSet.getInt("deal_id"));
-                    note.setDeal(deal);
-                }
-                if (resultSet.getObject("company_id") != null) {
-                    Company company = new Company();
-                    company.setId(resultSet.getInt("company_id"));
-                    note.setCompany(company);
-                }
-                if (resultSet.getObject("contact_id") != null) {
-                    Contact contact = new Contact();
-                    contact.setId(resultSet.getInt("contact_id"));
-                    note.setContact(contact);
-                }
-                //logger.log(Level.INFO, "GET NOTE BY ID " + note.toString());
-
-            } else {
-                return null;
-            }
-
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException(ex);
-        } finally {
-            if (resultSet != null) {
-                Utils.closeQuietly(resultSet);
-            }
+        note.setId(resultSet.getInt(FIELD_ID));
+        creator.setId(resultSet.getInt("created_by_id"));
+        note.setCreator(creator);
+        note.setNote(resultSet.getString("note"));
+        note.setDateCreate(resultSet.getTimestamp("date_create"));
+        note.setDelete(false);
+        if (resultSet.getObject("deal_id") != null) {
+            Deal deal = new Deal();
+            deal.setId(resultSet.getInt("deal_id"));
+            note.setDeal(deal);
+        }
+        if (resultSet.getObject("company_id") != null) {
+            Company company = new Company();
+            company.setId(resultSet.getInt("company_id"));
+            note.setCompany(company);
+        }
+        if (resultSet.getObject("contact_id") != null) {
+            Contact contact = new Contact();
+            contact.setId(resultSet.getInt("contact_id"));
+            note.setContact(contact);
         }
         return note;
-    }
+    };
 }

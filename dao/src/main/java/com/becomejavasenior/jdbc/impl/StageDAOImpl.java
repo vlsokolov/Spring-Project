@@ -3,17 +3,17 @@ package com.becomejavasenior.jdbc.impl;
 import com.becomejavasenior.entity.Stage;
 import com.becomejavasenior.jdbc.entity.StageDAO;
 import com.becomejavasenior.jdbc.exceptions.DatabaseException;
-import com.becomejavasenior.jdbc.factory.PostgresDAOFactory;
 import org.apache.commons.dbcp2.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.PreparedStatementSetter;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
 
-@Repository("stageDao")
+@Repository
 public class StageDAOImpl extends AbstractDAO<Stage> implements StageDAO {
 
     private static final String INSERT_SQL = "INSERT INTO stage_deals (id, name, deleted) " +
@@ -24,6 +24,9 @@ public class StageDAOImpl extends AbstractDAO<Stage> implements StageDAO {
     private static final String TABLE_NAME = "stage_deals";
 
     private final String className = getClass().getSimpleName().concat(": ");
+
+    @Autowired
+    private DataSource dataSource;
 
     @Override
     public int insert(Stage stage) {
@@ -61,17 +64,12 @@ public class StageDAOImpl extends AbstractDAO<Stage> implements StageDAO {
         if (stage.getId() == 0) {
             throw new DatabaseException("stage must be created before update");
         }
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(UPDATE_SQL)) {
-
+        PreparedStatementSetter preparedStatementSetter = statement -> {
             statement.setString(1, stage.getName());
             statement.setBoolean(2, stage.isDelete());
             statement.setInt(3, stage.getId());
-            statement.executeUpdate();
-
-        } catch (Exception e) {
-            throw new DatabaseException(className + ERROR_PREPARING_UPDATE + TABLE_NAME, e);
-        }
+        };
+        jdbcTemplate.update(UPDATE_SQL, preparedStatementSetter);
     }
 
     @Override
@@ -81,49 +79,22 @@ public class StageDAOImpl extends AbstractDAO<Stage> implements StageDAO {
 
     @Override
     public List<Stage> getAll() {
-
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(SELECT_SQL)) {
-
-            return parseResultSet(resultSet);
-
-        } catch (SQLException e) {
-            throw new DatabaseException(className + ERROR_SELECT_ALL, e);
-        }
+        return jdbcTemplate.query(SELECT_SQL, StageRowMapper);
     }
 
     @Override
     public Stage getById(int id) {
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(SELECT_SQL + " AND id = ?")) {
-
-            statement.setInt(1, id);
-            List<Stage> stageList = parseResultSet(statement.executeQuery());
-            return stageList == null || stageList.isEmpty() ? null : stageList.get(0);
-
-        } catch (SQLException e) {
-            throw new DatabaseException(className + ERROR_SELECT_1, e);
-        }
+        return jdbcTemplate.queryForObject(SELECT_SQL + " AND id = ?", StageRowMapper, id);
     }
 
-    private List<Stage> parseResultSet(ResultSet resultSet) throws SQLException {
+    private static final RowMapper<Stage> StageRowMapper = (resultSet, i) -> {
+        Stage stage = new Stage();
+        stage.setId(resultSet.getInt(FIELD_ID));
+        stage.setName(resultSet.getString(FIELD_NAME));
+        stage.setDelete(false);
+        return stage;
+    };
 
-        List<Stage> stageList = new ArrayList<>();
-        try {
-            while (resultSet.next()) {
-                Stage stage = new Stage();
-                stage.setId(resultSet.getInt(FIELD_ID));
-                stage.setName(resultSet.getString(FIELD_NAME));
-                stage.setDelete(false);
-                stageList.add(stage);
-            }
-        } catch (Exception e) {
-            throw new DatabaseException(className + ERROR_PARSE_RESULT_SET + TABLE_NAME, e);
-        }
-        return stageList;
-    }
 
     private int selectStageByName(String stageName) {
 

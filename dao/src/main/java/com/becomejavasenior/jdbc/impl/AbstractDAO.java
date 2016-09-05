@@ -1,18 +1,22 @@
 package com.becomejavasenior.jdbc.impl;
 
 import com.becomejavasenior.jdbc.exceptions.DatabaseException;
+import com.becomejavasenior.jdbc.factory.PostgresDAOFactory;
 import com.becomejavasenior.jdbc.entity.GenericDAO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
-
 //import java.util.logging.Level;
 //import java.util.logging.Logger;
 
+@Repository
 abstract class AbstractDAO<T> implements GenericDAO<T> {
 
     static final String ERROR_PARSE_RESULT_SET = "error while parsing result set for ";
@@ -26,8 +30,12 @@ abstract class AbstractDAO<T> implements GenericDAO<T> {
     static final String FIELD_ID = "id";
     static final String FIELD_NAME = "name";
 
+    protected JdbcTemplate jdbcTemplate;
+
     @Autowired
-    protected DataSource dataSource;
+    public void setDataSource(DataSource dataSource){
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+    }
 
     @Override
     abstract public int insert(T o);
@@ -42,20 +50,6 @@ abstract class AbstractDAO<T> implements GenericDAO<T> {
     abstract public T getById(int id);
 
     public void delete(int id, String tableName /*, Logger logger*/) {
-
-        final String DELETE_SQL = "UPDATE " + tableName + " SET deleted = TRUE WHERE id = ?";
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(DELETE_SQL)) {
-
-            statement.setInt(1, id);
-            statement.executeUpdate();
-
-            //logger.log(Level.INFO, "DELETE ENTITY WITH ID = " + id + " FROM TABLE " + tableName);
-
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException(ex);
-        }
+        jdbcTemplate.update("UPDATE " + tableName + " SET deleted = TRUE WHERE id = " + id);
     }
 }

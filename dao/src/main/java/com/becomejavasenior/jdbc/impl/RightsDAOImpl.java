@@ -5,10 +5,14 @@ import com.becomejavasenior.entity.SubjectType;
 import com.becomejavasenior.entity.User;
 import com.becomejavasenior.jdbc.entity.RightsDAO;
 import com.becomejavasenior.jdbc.exceptions.DatabaseException;
+import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.core.PreparedStatementSetter;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
 
 @Repository
@@ -42,28 +46,20 @@ public class RightsDAOImpl extends AbstractDAO<Rights> implements RightsDAO {
         if (rights.getId() != 0) {
             throw new DatabaseException(className + ERROR_ID_MUST_BE_FROM_DBMS + TABLE_NAME + ERROR_GIVEN_ID + rights.getId());
         }
-
-        int id;
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement insertStatement = connection.prepareStatement(INSERT_SQL, Statement.RETURN_GENERATED_KEYS)) {
-
-            insertStatement.setObject(1, rights.getUser() == null ? null : rights.getUser().getId(), Types.INTEGER);
-            insertStatement.setObject(2, rights.getSubjectType() == null ? null : rights.getSubjectType().getId(), Types.INTEGER);
-            insertStatement.setBoolean(3, rights.isCreate());
-            insertStatement.setBoolean(4, rights.isRead());
-            insertStatement.setBoolean(5, rights.isDelete());
-            insertStatement.setBoolean(6, rights.isChange());
-            insertStatement.setBoolean(7, rights.isExport());
-
-            if (1 == insertStatement.executeUpdate() && insertStatement.getGeneratedKeys().next()) {
-                id = insertStatement.getGeneratedKeys().getInt(FIELD_ID);
-                rights.setId(id);
-            } else {
-                throw new DatabaseException(className + "Can't get rights id from database");
-            }
-        } catch (SQLException e) {
-            throw new DatabaseException(className + ERROR_PREPARING_INSERT + TABLE_NAME, e);
-        }
+        PreparedStatementCreator preparedStatementCreator = connection -> {
+            PreparedStatement statement = connection.prepareStatement(INSERT_SQL, new String[]{"id"});
+            statement.setObject(1, rights.getUser() == null ? null : rights.getUser().getId(), Types.INTEGER);
+            statement.setObject(2, rights.getSubjectType() == null ? null : rights.getSubjectType().getId(), Types.INTEGER);
+            statement.setBoolean(3, rights.isCreate());
+            statement.setBoolean(4, rights.isRead());
+            statement.setBoolean(5, rights.isDelete());
+            statement.setBoolean(6, rights.isChange());
+            statement.setBoolean(7, rights.isExport());
+            return statement;
+        };
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(preparedStatementCreator, keyHolder);
+        int id = (int) keyHolder.getKey().longValue();
         return id;
     }
 
@@ -73,23 +69,18 @@ public class RightsDAOImpl extends AbstractDAO<Rights> implements RightsDAO {
         if (rights.getId() == 0) {
             throw new DatabaseException("rights must be created before update");
         }
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement updateStatement = connection.prepareStatement(UPDATE_SQL)) {
-
-            updateStatement.setInt(1, rights.getUser().getId());
-            updateStatement.setInt(2, rights.getSubjectType().getId());
-            updateStatement.setBoolean(3, rights.isCreate());
-            updateStatement.setBoolean(4, rights.isRead());
-            updateStatement.setBoolean(5, rights.isDelete());
-            updateStatement.setBoolean(6, rights.isChange());
-            updateStatement.setBoolean(7, rights.isExport());
-            updateStatement.setBoolean(8, rights.isDeleted());
-            updateStatement.setInt(9, rights.getId());
-            updateStatement.executeUpdate();
-
-        } catch (Exception e) {
-            throw new DatabaseException(className + ERROR_PREPARING_UPDATE + TABLE_NAME, e);
-        }
+        PreparedStatementSetter preparedStatementSetter = statement -> {
+            statement.setInt(1, rights.getUser().getId());
+            statement.setInt(2, rights.getSubjectType().getId());
+            statement.setBoolean(3, rights.isCreate());
+            statement.setBoolean(4, rights.isRead());
+            statement.setBoolean(5, rights.isDelete());
+            statement.setBoolean(6, rights.isChange());
+            statement.setBoolean(7, rights.isExport());
+            statement.setBoolean(8, rights.isDeleted());
+            statement.setInt(9, rights.getId());
+        };
+        jdbcTemplate.update(UPDATE_SQL, preparedStatementSetter);
     }
 
     @Override
@@ -99,69 +90,35 @@ public class RightsDAOImpl extends AbstractDAO<Rights> implements RightsDAO {
 
     @Override
     public List<Rights> getAll() {
-
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(SELECT_SQL)) {
-
-            return parseResultSet(resultSet);
-
-        } catch (Exception e) {
-            throw new DatabaseException(className + ERROR_SELECT_ALL, e);
-        }
+        return jdbcTemplate.query(SELECT_SQL, RightsRowMapper);
     }
 
     @Override
     public Rights getById(int id) {
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(SELECT_SQL + " AND id = ?")) {
-
-            statement.setInt(1, id);
-            List<Rights> rightsList = parseResultSet(statement.executeQuery());
-            return rightsList == null || rightsList.isEmpty() ? null : rightsList.get(0);
-
-        } catch (Exception e) {
-            throw new DatabaseException(className + ERROR_SELECT_1, e);
-        }
+        return jdbcTemplate.queryForObject(SELECT_SQL + " AND id = ?", RightsRowMapper, id);
     }
 
-    private List<Rights> parseResultSet(ResultSet resultSet) throws SQLException {
-
-        List<Rights> rightsList = new ArrayList<>();
-        try {
-            while (resultSet.next()) {
-                Rights rights = new Rights();
-                rights.setId(resultSet.getInt(FIELD_ID));
-                User user = new User();
-                user.setId(resultSet.getInt(FIELD_USER_ID));
-                rights.setUser(user);
-                rights.setSubjectType(SubjectType.getById(resultSet.getInt(FIELD_SUBJECT_TYPE)));
-                rights.setCreate(resultSet.getBoolean(FIELD_SUBJECT_TYPE_CREATE));
-                rights.setRead(resultSet.getBoolean(FIELD_SUBJECT_TYPE_READ));
-                rights.setDelete(resultSet.getBoolean(FIELD_SUBJECT_TYPE_DELETE));
-                rights.setChange(resultSet.getBoolean(FIELD_SUBJECT_TYPE_CHANGE));
-                rights.setExport(resultSet.getBoolean(FIELD_SUBJECT_TYPE_EXPORT));
-                rights.setDeleted(false);
-                rightsList.add(rights);
-            }
-        } catch (Exception e) {
-            throw new DatabaseException(className + ERROR_PARSE_RESULT_SET + TABLE_NAME, e);
-        }
-        return rightsList;
-    }
+    private static final RowMapper<Rights> RightsRowMapper = (resultSet, i) -> {
+        Rights rights = new Rights();
+        rights.setId(resultSet.getInt(FIELD_ID));
+        User user = new User();
+        user.setId(resultSet.getInt(FIELD_USER_ID));
+        rights.setUser(user);
+        rights.setSubjectType(SubjectType.getById(resultSet.getInt(FIELD_SUBJECT_TYPE)));
+        rights.setCreate(resultSet.getBoolean(FIELD_SUBJECT_TYPE_CREATE));
+        rights.setRead(resultSet.getBoolean(FIELD_SUBJECT_TYPE_READ));
+        rights.setDelete(resultSet.getBoolean(FIELD_SUBJECT_TYPE_DELETE));
+        rights.setChange(resultSet.getBoolean(FIELD_SUBJECT_TYPE_CHANGE));
+        rights.setExport(resultSet.getBoolean(FIELD_SUBJECT_TYPE_EXPORT));
+        rights.setDeleted(false);
+        return rights;
+    };
 
     @Override
     public List<Rights> getRightsByUserId(int userId) {
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(SELECT_SQL + " AND user_id = ?")) {
-
+        PreparedStatementSetter preparedStatementSetter = statement -> {
             statement.setInt(1, userId);
-            return parseResultSet(statement.executeQuery());
-
-        } catch (Exception e) {
-            throw new DatabaseException(className + ERROR_SELECT_ALL + " for user id = " + userId, e);
-        }
+        };
+        return jdbcTemplate.query(SELECT_SQL + " AND user_id = ?", RightsRowMapper, preparedStatementSetter);
     }
 }

@@ -4,11 +4,14 @@ import com.becomejavasenior.entity.Language;
 import com.becomejavasenior.entity.User;
 import com.becomejavasenior.jdbc.exceptions.DatabaseException;
 import com.becomejavasenior.jdbc.entity.UserDAO;
-import org.apache.commons.dbcp2.Utils;
+import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.core.PreparedStatementSetter;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
 //import java.util.logging.Level;
 //import java.util.logging.Logger;
@@ -25,19 +28,14 @@ public class UserDAOImpl extends AbstractDAO<User> implements UserDAO {
     private static final String SELECT_ALL_SQL = "SELECT id, name, email, password, is_admin, phone, mobile_phone," +
             " note, image, url, language_id FROM \"user\" WHERE NOT deleted";
 
-    public UserDAOImpl(){
-    }
-
     @Override
     public int insert(User user) {
 
         if (user.getId() != 0) {
             throw new DatabaseException("user id must be obtained from DB");
         }
-        int id;
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(INSERT_SQL, Statement.RETURN_GENERATED_KEYS)) {
+        PreparedStatementCreator preparedStatementCreator = connection -> {
+            PreparedStatement statement = connection.prepareStatement(INSERT_SQL, new String[]{"id"});
 
             statement.setString(1, user.getName());
             statement.setString(2, user.getEmail());
@@ -49,19 +47,13 @@ public class UserDAOImpl extends AbstractDAO<User> implements UserDAO {
             statement.setString(8, user.getUrl());
             statement.setBytes(9, user.getImage());
             statement.setInt(10, user.getLanguage().getId());
+            return statement;
+        };
 
-            if (1 == statement.executeUpdate() && statement.getGeneratedKeys().next()) {
-                id = statement.getGeneratedKeys().getInt(FIELD_ID);
-                user.setId(id);
-            } else {
-                throw new DatabaseException("Can't get user id from database.");
-            }
-            //logger.log(Level.INFO, "INSERT NEW USER " + user.toString());
-
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException(ex);
-        }
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(preparedStatementCreator, keyHolder);
+        int id=(int) keyHolder.getKey().longValue();
+        user.setId(id);
         return id;
     }
 
@@ -76,9 +68,7 @@ public class UserDAOImpl extends AbstractDAO<User> implements UserDAO {
         if (user.getId() == 0) {
             throw new DatabaseException("user must be created before update");
         }
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(UPDATE_SQL)) {
-
+        PreparedStatementSetter preparedStatementSetter = statement -> {
             statement.setString(1, user.getName());
             statement.setString(2, user.getEmail());
             statement.setString(3, user.getPassword());
@@ -91,56 +81,21 @@ public class UserDAOImpl extends AbstractDAO<User> implements UserDAO {
             statement.setString(10, user.getUrl());
             statement.setInt(11, user.getLanguage().getId());
             statement.setInt(12, user.getId());
-            statement.executeUpdate();
-
-            //logger.log(Level.INFO, "UPDATE USER " + user.toString());
-
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException(ex);
-        }
+        };
+        jdbcTemplate.update(UPDATE_SQL, preparedStatementSetter);
     }
 
     @Override
     public List<User> getAll() {
-
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(SELECT_ALL_SQL)) {
-            return parseResultSet(resultSet);
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException(ex);
-        }
+       return jdbcTemplate.query(SELECT_ALL_SQL, UserRowMapper);
     }
 
     @Override
     public User getById(int id) {
-
-        ResultSet resultSet = null;
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(SELECT_ALL_SQL + " AND id = ?")) {
-
-            statement.setInt(1, id);
-            resultSet = statement.executeQuery();
-            List<User> userList = parseResultSet(resultSet);
-            return userList == null || userList.isEmpty() ? null : userList.get(0);
-
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException(ex);
-        } finally {
-            if (resultSet != null) {
-                Utils.closeQuietly(resultSet);
-            }
-        }
+        return jdbcTemplate.queryForObject(SELECT_ALL_SQL + " AND id = ?", UserRowMapper, id);
     }
 
-    private List<User> parseResultSet(ResultSet resultSet) throws SQLException {
-
-        List<User> userList = new ArrayList<>();
-
-        while (resultSet.next()) {
+    private static final RowMapper<User> UserRowMapper = (resultSet, i) -> {
             User user = new User();
             user.setId(resultSet.getInt(FIELD_ID));
             user.setName(resultSet.getString(FIELD_NAME));
@@ -158,8 +113,6 @@ public class UserDAOImpl extends AbstractDAO<User> implements UserDAO {
                 language.setId(resultSet.getInt("language_id"));
                 user.setLanguage(language);
             }
-            userList.add(user);
-        }
-        return userList;
-    }
+        return user;
+    };
 }

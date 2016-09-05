@@ -3,18 +3,23 @@ package com.becomejavasenior.jdbc.impl;
 import com.becomejavasenior.entity.*;
 import com.becomejavasenior.jdbc.entity.DealDAO;
 import com.becomejavasenior.jdbc.exceptions.DatabaseException;
-import org.apache.commons.dbcp2.Utils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.core.PreparedStatementSetter;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+import javax.sql.DataSource;
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 //import java.util.logging.Level;
 //import java.util.logging.Logger;
 
-
+@Repository
 public class DealDAOImpl extends AbstractDAO<Deal> implements DealDAO {
 
     //private final static Logger logger = Logger.getLogger(CompanyDAOImpl.class.getName());
@@ -58,129 +63,75 @@ public class DealDAOImpl extends AbstractDAO<Deal> implements DealDAO {
             "  JOIN contact ON deal.primary_contact_id = contact.id\n" +
             "  JOIN company ON contact.company_id = company.id\n";
 
+    @Autowired
+    private DataSource dataSource;
+
+    private static final RowMapper<Deal> DealRowMapper = (resultSet, i) -> {
+        Deal deal = new Deal();
+        Company company = new Company();
+        Contact contact = new Contact();
+        Stage stage = new Stage();
+
+        deal.setName(resultSet.getString("name"));
+        deal.setAmount(resultSet.getBigDecimal("amount"));
+        stage.setName(resultSet.getString("stage"));
+        deal.setStage(stage);
+        contact.setId(resultSet.getInt("contactId"));
+        contact.setName(resultSet.getString("contact"));
+        company.setId(resultSet.getInt("companyId"));
+        company.setName(resultSet.getString("company"));
+        contact.setCompany(company);
+        deal.setPrimaryContact(contact);
+        return deal;
+    };
+
+
     @Override
     public List<Deal> getDealsForList() {
-        List<Deal> deals = new ArrayList<>();
-        Deal deal;
-        Contact contact;
-        Company company;
-        Stage stage;
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(SELECT_DEALS_FOR_LIST)) {
-
-            ResultSet resultSet = statement.executeQuery();
-
-            while (resultSet.next()) {
-
-                deal = new Deal();
-                company = new Company();
-                contact = new Contact();
-                stage = new Stage();
-
-                deal.setName(resultSet.getString("name"));
-                deal.setAmount(resultSet.getBigDecimal("amount"));
-                stage.setName(resultSet.getString("stage"));
-                deal.setStage(stage);
-                contact.setId(resultSet.getInt("contactId"));
-                contact.setName(resultSet.getString("contact"));
-                company.setId(resultSet.getInt("companyId"));
-                company.setName(resultSet.getString("company"));
-                contact.setCompany(company);
-                deal.setPrimaryContact(contact);
-
-                deals.add(deal);
-            }
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException(ex);
-        }
-
-        return deals;
+        return jdbcTemplate.query(SELECT_DEALS_FOR_LIST, DealRowMapper);
     }
+
+    private static final RowMapper<Deal> DealForStageRowMapper = (resultSet, i) -> {
+        Deal deal = new Deal();
+        Company company = new Company();
+
+        deal.setId(resultSet.getInt("id"));
+        deal.setName(resultSet.getString("name"));
+        deal.setAmount(resultSet.getBigDecimal("amount"));
+        company.setId(resultSet.getInt("companyId"));
+        company.setName(resultSet.getString("companyName"));
+        deal.setCompany(company);
+        return deal;
+    };
+
 
     @Override
     public List<Deal> getDealsByStage(String stage) {
-        List<Deal> deals = new ArrayList<>();
-        Deal deal;
-        Company company;
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(SELECT_ALL_DEAL_BY_STAGE)) {
-
-            statement.setString(1, stage);
-            ResultSet resultSet = statement.executeQuery();
-
-            while (resultSet.next()) {
-
-                deal = new Deal();
-                company = new Company();
-
-                deal.setId(resultSet.getInt("id"));
-                deal.setName(resultSet.getString("name"));
-                deal.setAmount(resultSet.getBigDecimal("amount"));
-                company.setId(resultSet.getInt("companyId"));
-                company.setName(resultSet.getString("companyName"));
-                deal.setCompany(company);
-
-                deals.add(deal);
-            }
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException(ex);
-        }
-
-        return deals;
+        return jdbcTemplate.query(SELECT_ALL_DEAL_BY_STAGE, DealForStageRowMapper);
     }
+
+    private static final RowMapper<Contact> ContactRowMapper = (resultSet, i) -> {
+        Contact contact = new Contact();
+        contact.setId(resultSet.getInt("id"));
+        contact.setName(resultSet.getString("name"));
+        return contact;
+    };
 
     @Override
     public List<Contact> getContactsByDealName(String dealName) {
-        List<Contact> contacts = new ArrayList<>();
-        Contact contact;
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(SELECT_ALL_CONTACT)) {
-
-            statement.setString(1, dealName);
-            ResultSet resultSet = statement.executeQuery();
-
-            while (resultSet.next()) {
-
-                contact = new Contact();
-                contact.setId(resultSet.getInt("id"));
-                contact.setName(resultSet.getString("name"));
-                contacts.add(contact);
-            }
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException(ex);
-        }
-
-        return contacts;
+        return jdbcTemplate.query(SELECT_ALL_CONTACT, ContactRowMapper);
     }
+
+    private static final RowMapper<Stage> StageRowMapper = (resultSet, i) -> {
+        Stage stage = new Stage();
+        stage.setId(resultSet.getInt("id"));
+        stage.setName(resultSet.getString("name"));
+        return stage;
+    };
 
     @Override
     public List<Stage> getAllStage() {
-        List<Stage> stages = new ArrayList<>();
-        Stage stage;
-
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(SELECT_ALL_STAGES)) {
-
-            while (resultSet.next()) {
-
-                stage = new Stage();
-                stage.setId(resultSet.getInt("id"));
-                stage.setName(resultSet.getString("name"));
-
-                stages.add(stage);
-            }
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException(ex);
-        }
-        return stages;
+        return jdbcTemplate.query(SELECT_ALL_STAGES, StageRowMapper);
     }
 
     @Override
@@ -189,11 +140,8 @@ public class DealDAOImpl extends AbstractDAO<Deal> implements DealDAO {
         if (deal.getId() != 0) {
             throw new DatabaseException("deal id must be obtained from DB");
         }
-        int id;
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(INSERT_SQL, Statement.RETURN_GENERATED_KEYS)) {
-
+        PreparedStatementCreator preparedStatementCreator = connection -> {
+            PreparedStatement statement = connection.prepareStatement(INSERT_SQL, new String[]{"id"});
             statement.setInt(1, deal.getStage().getId());
             statement.setObject(2, deal.getResponsibleUser() == null ? null : deal.getResponsibleUser().getId());
             statement.setInt(3, deal.getCompany().getId());
@@ -203,24 +151,12 @@ public class DealDAOImpl extends AbstractDAO<Deal> implements DealDAO {
             statement.setBoolean(7, deal.isDelete());
             statement.setTimestamp(8, new java.sql.Timestamp(deal.getDateCreate() == null ? System.currentTimeMillis() : deal.getDateCreate().getTime()));
             statement.setObject(9, deal.getPrimaryContact() == null ? null : deal.getPrimaryContact().getId(), Types.INTEGER);
+            return statement;
+        };
 
-            if (1 == statement.executeUpdate() && statement.getGeneratedKeys().next()) {
-                id = statement.getGeneratedKeys().getInt(FIELD_ID);
-                deal.setId(id);
-            } else {
-                throw new DatabaseException("Can't get deal id from database.");
-            }
-            //logger.log(Level.INFO, "INSERT NEW DEAL " + deal.toString());
-
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException(ex);
-        }
-        if (deal.getContacts() != null && deal.getContacts().size() > 0) {
-            for (Contact contact : deal.getContacts()) {
-                addContactToDeal(deal, contact);
-            }
-        }
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(preparedStatementCreator, keyHolder);
+        int id = (int) keyHolder.getKey().longValue();
         return id;
     }
 
@@ -235,9 +171,7 @@ public class DealDAOImpl extends AbstractDAO<Deal> implements DealDAO {
         if (deal.getId() == 0) {
             throw new DatabaseException("deal must be created before update");
         }
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(UPDATE_SQL)) {
-
+        PreparedStatementSetter preparedStatementSetter = statement -> {
             statement.setInt(1, deal.getStage().getId());
             statement.setObject(2, deal.getResponsibleUser() == null ? null : deal.getResponsibleUser().getId());
             statement.setInt(3, deal.getCompany().getId());
@@ -248,156 +182,66 @@ public class DealDAOImpl extends AbstractDAO<Deal> implements DealDAO {
             statement.setTimestamp(8, new java.sql.Timestamp(deal.getDateCreate().getTime()));
             statement.setObject(9, deal.getPrimaryContact() == null ? null : deal.getPrimaryContact().getId(), Types.INTEGER);
             statement.setInt(10, deal.getId());
-            statement.executeUpdate();
-
-            //logger.log(Level.INFO, "UPDATE DEAL " + deal.toString());
-
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException(ex);
-        }
+        };
+        jdbcTemplate.update(UPDATE_SQL, preparedStatementSetter);
     }
 
+    private static final RowMapper<Deal> AllDealRowMapper = (resultSet, i) -> {
+        Deal deal = new Deal();
+        User responsibleUser = new User();
+        User creator = new User();
+        Company company = new Company();
+        Stage stage = new Stage();
+
+        deal.setId(resultSet.getInt(FIELD_ID));
+        responsibleUser.setId(resultSet.getInt("responsible_user_id"));
+        deal.setResponsibleUser(responsibleUser);
+        company.setId(resultSet.getInt("company_id"));
+        deal.setCompany(company);
+        creator.setId(resultSet.getInt("created_by_id"));
+        deal.setCreator(creator);
+        deal.setName(resultSet.getString(FIELD_NAME));
+        deal.setAmount(resultSet.getBigDecimal("amount"));
+        deal.setDelete(false);
+        deal.setDateCreate(resultSet.getTimestamp("date_create"));
+        stage.setId(resultSet.getInt("stage_id"));
+        deal.setStage(stage);
+        if (resultSet.getObject("primary_contact_id") != null) {
+            Contact primaryContact = new Contact();
+            primaryContact.setId(resultSet.getInt("primary_contact_id"));
+            deal.setPrimaryContact(primaryContact);
+        }
+        return deal;
+    };
     @Override
     public List<Deal> getAll() {
-
-        List<Deal> deals = new ArrayList<>();
-        Deal deal;
-        User responsibleUser;
-        User creator;
-        Company company;
-
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(SELECT_ALL_SQL)) {
-
-            while (resultSet.next()) {
-
-                deal = new Deal();
-                responsibleUser = new User();
-                creator = new User();
-                company = new Company();
-                Stage stage = new Stage();
-
-                deal.setId(resultSet.getInt(FIELD_ID));
-                responsibleUser.setId(resultSet.getInt("responsible_user_id"));
-                deal.setResponsibleUser(responsibleUser);
-                company.setId(resultSet.getInt("company_id"));
-                deal.setCompany(company);
-                creator.setId(resultSet.getInt("created_by_id"));
-                deal.setCreator(creator);
-                deal.setName(resultSet.getString(FIELD_NAME));
-                deal.setAmount(resultSet.getBigDecimal("amount"));
-                deal.setDelete(false);
-                deal.setDateCreate(resultSet.getTimestamp("date_create"));
-                stage.setId(resultSet.getInt("stage_id"));
-                deal.setStage(stage);
-                if (resultSet.getObject("primary_contact_id") != null) {
-                    Contact primaryContact = new Contact();
-                    primaryContact.setId(resultSet.getInt("primary_contact_id"));
-                    deal.setPrimaryContact(primaryContact);
-                }
-
-                deals.add(deal);
-            }
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException(ex);
-        }
-        return deals;
+        return jdbcTemplate.query(SELECT_ALL_SQL, AllDealRowMapper);
     }
 
     @Override
     public Deal getById(int id) {
-
-        ResultSet resultSet = null;
-        Deal deal;
-        User responsibleUser;
-        User creator;
-        Company company;
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(SELECT_ALL_SQL + " AND id = ?")) {
-
-            statement.setInt(1, id);
-            resultSet = statement.executeQuery();
-
-            if (resultSet.next()) {
-
-                deal = new Deal();
-                responsibleUser = new User();
-                creator = new User();
-                company = new Company();
-                Stage stage = new Stage();
-
-                deal.setId(resultSet.getInt(FIELD_ID));
-                responsibleUser.setId(resultSet.getInt("responsible_user_id"));
-                deal.setResponsibleUser(responsibleUser);
-                company.setId(resultSet.getInt("company_id"));
-                deal.setCompany(company);
-                creator.setId(resultSet.getInt("created_by_id"));
-                deal.setCreator(creator);
-                deal.setName(resultSet.getString(FIELD_NAME));
-                deal.setAmount(resultSet.getBigDecimal("amount"));
-                deal.setDelete(false);
-                deal.setDateCreate(resultSet.getTimestamp("date_create"));
-                stage.setId(resultSet.getInt("stage_id"));
-                deal.setStage(stage);
-                if (resultSet.getObject("primary_contact_id") != null) {
-                    Contact primaryContact = new Contact();
-                    primaryContact.setId(resultSet.getInt("primary_contact_id"));
-                    deal.setPrimaryContact(primaryContact);
-                }
-
-                //logger.log(Level.INFO, "GET DEAL BY ID " + deal.toString());
-
-            } else {
-                return null;
-            }
-
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException(ex);
-        } finally {
-            if (resultSet != null) {
-                Utils.closeQuietly(resultSet);
-            }
-        }
-        return deal;
+        return jdbcTemplate.queryForObject(SELECT_ALL_SQL + " AND id = ?", AllDealRowMapper, id);
     }
 
     @Override
     public void addContactToDeal(Deal deal, Contact contact) {
         if (deal != null && deal.getId() > 0 && contact != null && contact.getId() > 0) {
-            try (Connection connection = dataSource.getConnection();
-                 PreparedStatement statement = connection.prepareStatement(INSERT_DEAL_CONTACT_SQL)) {
+            PreparedStatementSetter preparedStatementSetter = statement -> {
                 statement.setInt(1, deal.getId());
                 statement.setInt(2, contact.getId());
-                statement.executeUpdate();
-            } catch (SQLException e) {
-                throw new DatabaseException("Can't add contact to deal relation", e);
-            }
+            };
+            jdbcTemplate.update(INSERT_DEAL_CONTACT_SQL, preparedStatementSetter);
         }
     }
 
     @Override
     public Map<Integer, String> getStageDealsList() {
-
-        Map<Integer, String> stageDeals = new HashMap<>();
-
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(SELECT_ALL_STAGE_DEALS_SQL)) {
-
-            while (resultSet.next()) {
-
-                stageDeals.put(resultSet.getInt("id"), resultSet.getString("name"));
-
+        return jdbcTemplate.query(SELECT_ALL_STAGE_DEALS_SQL, rs -> {
+            Map<Integer,String> stageDeals= new HashMap<>();
+            while(rs.next()){
+                stageDeals.put(rs.getInt("id"),rs.getString("name"));
             }
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException(ex);
-        }
-        return stageDeals;
+            return stageDeals;
+        });
     }
 }

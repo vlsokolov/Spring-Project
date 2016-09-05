@@ -2,6 +2,7 @@ package com.becomejavasenior.jdbc.impl;
 
 import com.becomejavasenior.entity.*;
 import com.becomejavasenior.jdbc.ConnectionPool;
+import com.becomejavasenior.jdbc.entity.ContactDAO;
 import com.becomejavasenior.jdbc.entity.TaskDAO;
 import com.becomejavasenior.jdbc.factory.PostgresDAOFactory;
 import org.junit.After;
@@ -17,7 +18,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 
-public class TaskDAOTest {
+public class TaskDAOTest extends BasicJdbcTemplateTest{
 
     private static final String DEFAULT_NAME = "Default Task Name";
     private static final Date DEFAULT_DATE = new Timestamp(new Date().getTime());
@@ -44,7 +45,7 @@ public class TaskDAOTest {
     @After
     public void tearDown() throws SQLException {
         if (taskTestId > 0) {
-            try (Connection connection = ConnectionPool.getConnection();
+            try (Connection connection = dataSource.getConnection();
                  Statement statement = connection.createStatement()) {
                 statement.executeUpdate("DELETE FROM task WHERE id = " + Integer.toString(taskTestId));
             } catch (SQLException e) {
@@ -93,7 +94,7 @@ public class TaskDAOTest {
         Timestamp updatedCreateDate = new Timestamp(1L << 41);
         User updatedUser = factory.getUserDAO().getById(2);
         Company updatedCompany = factory.getCompanyDAO().getById(2);
-        Contact updatedContact = factory.getContactDAO().getById(2);
+        Contact updatedContact = contactDAO.getById(2);
         Deal updatedDeal = factory.getDealDAO().getById(2);
         String updatedTaskType = "Срочно";
         String updatedTaskStatus = "Выполнено";

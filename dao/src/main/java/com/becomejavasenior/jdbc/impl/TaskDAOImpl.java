@@ -6,6 +6,11 @@ import com.becomejavasenior.jdbc.exceptions.DatabaseException;
 import com.becomejavasenior.jdbc.factory.PostgresDAOFactory;
 import org.apache.commons.dbcp2.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.core.PreparedStatementSetter;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
@@ -17,7 +22,7 @@ import java.util.Map;
 //import java.util.logging.Level;
 //import java.util.logging.Logger;
 
-@Repository("taskDao")
+@Repository
 public class TaskDAOImpl extends AbstractDAO<Task> implements TaskDAO {
 
     //private final static Logger logger = Logger.getLogger(CompanyDAOImpl.class.getName());
@@ -55,17 +60,17 @@ public class TaskDAOImpl extends AbstractDAO<Task> implements TaskDAO {
     private static final String FIELD_DATE_TASK = "date_task";
     private static final String FIELD_TIME_TASK = "time_task";
 
+    @Autowired
+    private DataSource datasource;
+
     @Override
     public int insert(Task task) {
 
         if (task.getId() != 0) {
             throw new DatabaseException("task id must be obtained from DB");
         }
-        int id;
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(INSERT_SQL, Statement.RETURN_GENERATED_KEYS)) {
-
+        PreparedStatementCreator preparedStatementCreator = connection -> {
+            PreparedStatement statement = connection.prepareStatement(INSERT_SQL, new String[]{"id"});
             statement.setObject(1, task.getResponsibleUser() == null ? null : task.getResponsibleUser().getId(), Types.INTEGER);
             statement.setInt(2, insertOrSelectTaskType(task.getTaskType()));
             statement.setInt(3, task.getCreator().getId());
@@ -78,19 +83,11 @@ public class TaskDAOImpl extends AbstractDAO<Task> implements TaskDAO {
             statement.setInt(10, insertOrSelectTaskStatus(task.getStatus()));
             statement.setObject(11, task.getDateTask() == null ? null : new java.sql.Date(task.getDateTask().getTime()), Types.DATE);
             statement.setString(12, task.getTimeTask());
-
-            if (1 == statement.executeUpdate() && statement.getGeneratedKeys().next()) {
-                id = statement.getGeneratedKeys().getInt(FIELD_ID);
-                task.setId(id);
-            } else {
-                throw new DatabaseException("Can't get task id from database.");
-            }
-            //logger.log(Level.INFO, "INSERT NEW TASK " + task.toString());
-
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException("Can't create task", ex);
-        }
+            return statement;
+        };
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(preparedStatementCreator, keyHolder);
+        int id = (int) keyHolder.getKey().longValue();
         return id;
     }
 
@@ -105,9 +102,7 @@ public class TaskDAOImpl extends AbstractDAO<Task> implements TaskDAO {
         if (task.getId() == 0) {
             throw new DatabaseException("task must be created before update");
         }
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(UPDATE_SQL)) {
-
+        PreparedStatementSetter preparedStatementSetter = statement -> {
             statement.setInt(1, task.getResponsibleUser().getId());
             statement.setInt(2, insertOrSelectTaskType(task.getTaskType()));
             statement.setInt(3, task.getCreator().getId());
@@ -122,87 +117,56 @@ public class TaskDAOImpl extends AbstractDAO<Task> implements TaskDAO {
             statement.setDate(12, new java.sql.Date(task.getDateTask().getTime()));
             statement.setString(13, task.getTimeTask());
             statement.setInt(14, task.getId());
-            statement.executeUpdate();
+        };
 
-            //logger.log(Level.INFO, "UPDATE TASK " + task.toString());
-
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException("Can't update task", ex);
-        }
+        jdbcTemplate.update(UPDATE_SQL, preparedStatementSetter);
     }
 
     @Override
     public List<Task> getAll() {
-
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(SELECT_ALL_SQL)) {
-            return parseResultSet(resultSet);
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException("Can't get task list", ex);
-        }
+        return jdbcTemplate.query(SELECT_ALL_SQL, TaskRowMapper);
     }
 
     @Override
     public Task getById(int id) {
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(SELECT_ALL_SQL + " AND task.id = ?")) {
-
-            statement.setInt(1, id);
-            List<Task> taskList = parseResultSet(statement.executeQuery());
-            return taskList == null || taskList.isEmpty() ? null : taskList.get(0);
-
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException("Can't get task by Id", ex);
-        }
+        return jdbcTemplate.queryForObject(SELECT_ALL_SQL + " AND task.id = ?", TaskRowMapper, id);
     }
 
-    private List<Task> parseResultSet(ResultSet resultSet) throws SQLException {
+    private static final RowMapper<Task> TaskRowMapper = (resultSet, i) -> {
+        Task task = new Task();
+        User responsibleUser = new User();
+        User creator = new User();
 
-        List<Task> taskList = new ArrayList<>();
-        while (resultSet.next()) {
-
-            Task task = new Task();
-            User responsibleUser = new User();
-            User creator = new User();
-
-            task.setId(resultSet.getInt(FIELD_ID));
-            responsibleUser.setId(resultSet.getInt(FIELD_RESPONSIBLE_USER_ID));
-            task.setResponsibleUser(responsibleUser);
-            task.setTaskType(resultSet.getString(FIELD_TASK_TYPE_NAME));
-            creator.setId(resultSet.getInt(FIELD_CREATED_BY_ID));
-            task.setCreator(creator);
-            if (resultSet.getObject(FIELD_COMPANY_ID) != null) {
-                Company company = new Company();
-                company.setId(resultSet.getInt(FIELD_COMPANY_ID));
-                task.setCompany(company);
-            }
-            if (resultSet.getObject(FIELD_CONTACT_ID) != null) {
-                Contact contact = new Contact();
-                contact.setId(resultSet.getInt(FIELD_CONTACT_ID));
-                task.setContact(contact);
-            }
-            if (resultSet.getObject(FIELD_DEAL_ID) != null) {
-                Deal deal = new Deal();
-                deal.setId(resultSet.getInt(FIELD_DEAL_ID));
-                task.setDeal(deal);
-            }
-            task.setPeriod(TypeOfPeriod.getById(resultSet.getInt(FIELD_PERIOD)));
-            task.setName(resultSet.getString(FIELD_NAME));
-            task.setDelete(false);
-            task.setDateCreate(resultSet.getTimestamp(FIELD_DATE_CREATE));
-            task.setStatus(resultSet.getString(FIELD_TASK_STATUS_NAME));
-            task.setDateTask(resultSet.getDate(FIELD_DATE_TASK));
-            task.setTimeTask(resultSet.getString(FIELD_TIME_TASK));
-
-            taskList.add(task);
+        task.setId(resultSet.getInt(FIELD_ID));
+        responsibleUser.setId(resultSet.getInt(FIELD_RESPONSIBLE_USER_ID));
+        task.setResponsibleUser(responsibleUser);
+        task.setTaskType(resultSet.getString(FIELD_TASK_TYPE_NAME));
+        creator.setId(resultSet.getInt(FIELD_CREATED_BY_ID));
+        task.setCreator(creator);
+        if (resultSet.getObject(FIELD_COMPANY_ID) != null) {
+            Company company = new Company();
+            company.setId(resultSet.getInt(FIELD_COMPANY_ID));
+            task.setCompany(company);
         }
-        return taskList;
-    }
+        if (resultSet.getObject(FIELD_CONTACT_ID) != null) {
+            Contact contact = new Contact();
+            contact.setId(resultSet.getInt(FIELD_CONTACT_ID));
+            task.setContact(contact);
+        }
+        if (resultSet.getObject(FIELD_DEAL_ID) != null) {
+            Deal deal = new Deal();
+            deal.setId(resultSet.getInt(FIELD_DEAL_ID));
+            task.setDeal(deal);
+        }
+        task.setPeriod(TypeOfPeriod.getById(resultSet.getInt(FIELD_PERIOD)));
+        task.setName(resultSet.getString(FIELD_NAME));
+        task.setDelete(false);
+        task.setDateCreate(resultSet.getTimestamp(FIELD_DATE_CREATE));
+        task.setStatus(resultSet.getString(FIELD_TASK_STATUS_NAME));
+        task.setDateTask(resultSet.getDate(FIELD_DATE_TASK));
+        task.setTimeTask(resultSet.getString(FIELD_TIME_TASK));
+        return task;
+    };
 
     // task_status table maintenance
     private int insertOrSelectTaskStatus(String taskStatus) {
@@ -213,7 +177,7 @@ public class TaskDAOImpl extends AbstractDAO<Task> implements TaskDAO {
 
         int id;
         ResultSet resultSet = null;
-        try (Connection connection = dataSource.getConnection();
+        try (Connection connection = datasource.getConnection();
              PreparedStatement statement = connection.prepareStatement(TASK_STATUS_SELECT_SQL + " AND name = ?")) {
 
             statement.setString(1, taskStatus);
@@ -236,40 +200,26 @@ public class TaskDAOImpl extends AbstractDAO<Task> implements TaskDAO {
     }
 
     private int insertTaskStatus(String taskStatus) {
-
-        int id;
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(TASK_STATUS_INSERT_SQL, Statement.RETURN_GENERATED_KEYS)) {
-
+        PreparedStatementCreator preparedStatementCreator = connection -> {
+            PreparedStatement statement = connection.prepareStatement(TASK_STATUS_INSERT_SQL, new String[]{"id"});
             statement.setString(1, taskStatus);
-
-            if (1 == statement.executeUpdate() && statement.getGeneratedKeys().next()) {
-                id = statement.getGeneratedKeys().getInt(FIELD_ID);
-            } else {
-                throw new DatabaseException("Can't get task status id");
-            }
-
-        } catch (SQLException e) {
-            throw new DatabaseException("Can't create task status", e);
-        }
+            return statement;
+        };
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(preparedStatementCreator, keyHolder);
+        int id = (int) keyHolder.getKey().longValue();
         return id;
     }
 
     @Override
     public List<String> getAllTaskStatus() {
-
-        List<String> statusList = new ArrayList<>();
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(TASK_STATUS_SELECT_SQL + " ORDER BY name");
-             ResultSet resultSet = statement.executeQuery()) {
-
+        return jdbcTemplate.query(TASK_STATUS_SELECT_SQL + " ORDER BY name", resultSet -> {
+            List<String> statusList = new ArrayList<>();
             while (resultSet.next()) {
                 statusList.add(resultSet.getString(FIELD_NAME));
             }
-        } catch (SQLException e) {
-            throw new DatabaseException("can't get task status list", e);
-        }
-        return statusList;
+            return statusList;
+        });
     }
 
     // task_type table maintenance
@@ -281,7 +231,7 @@ public class TaskDAOImpl extends AbstractDAO<Task> implements TaskDAO {
 
         int id;
         ResultSet resultSet = null;
-        try (Connection connection = dataSource.getConnection();
+        try (Connection connection = datasource.getConnection();
              PreparedStatement statement = connection.prepareStatement(TASK_TYPE_SELECT_SQL + " AND name = ?")) {
 
             statement.setString(1, taskType);
@@ -305,59 +255,37 @@ public class TaskDAOImpl extends AbstractDAO<Task> implements TaskDAO {
 
     private int insertTaskType(String taskType) {
 
-        int id;
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(TASK_TYPE_INSERT_SQL, Statement.RETURN_GENERATED_KEYS)) {
-
+        PreparedStatementCreator preparedStatementCreator = connection -> {
+            PreparedStatement statement = connection.prepareStatement(TASK_TYPE_INSERT_SQL, new String[]{"id"});
             statement.setString(1, taskType);
-
-            if (1 == statement.executeUpdate() && statement.getGeneratedKeys().next()) {
-                id = statement.getGeneratedKeys().getInt(FIELD_ID);
-            } else {
-                throw new DatabaseException("Can't get task type id");
-            }
-
-        } catch (SQLException e) {
-            throw new DatabaseException("Can't create task type", e);
-        }
+            return statement;
+        };
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(preparedStatementCreator, keyHolder);
+        int id = (int) keyHolder.getKey().longValue();
         return id;
     }
 
     @Override
     public List<String> getAllTaskType() {
 
-        List<String> typeList = new ArrayList<>();
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(TASK_TYPE_SELECT_SQL + " ORDER BY name");
-             ResultSet resultSet = statement.executeQuery()) {
-
+        return jdbcTemplate.query(TASK_TYPE_SELECT_SQL + " ORDER BY name", resultSet -> {
+            List<String> typeList = new ArrayList<>();
             while (resultSet.next()) {
                 typeList.add(resultSet.getString(FIELD_NAME));
             }
-        } catch (SQLException e) {
-            throw new DatabaseException("Can't get task type list", e);
-        }
-        return typeList;
+            return typeList;
+        });
     }
 
     @Override
     public Map<Integer, String> getTaskTypeList() {
-
+        return jdbcTemplate.query(TASK_TYPE_SELECT_SQL, resultSet -> {
         Map<Integer, String> taskTypes = new HashMap<>();
-
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(TASK_TYPE_SELECT_SQL)) {
-
             while (resultSet.next()) {
-
                 taskTypes.put(resultSet.getInt("id"), resultSet.getString("name"));
-
             }
-        } catch (SQLException ex) {
-            //logger.log(Level.SEVERE, ex.getMessage(), ex);
-            throw new DatabaseException(ex);
-        }
         return taskTypes;
+        });
     }
 }

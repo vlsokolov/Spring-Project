@@ -1,25 +1,27 @@
 package com.becomejavasenior.jdbc;
 
 import com.becomejavasenior.jdbc.exceptions.DatabaseException;
-import org.apache.commons.dbcp2.BasicDataSource;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-@Service
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration("classpath:dao-context.xml")
 public class ConnectionPoolTest {
 
     @Autowired
-    private BasicDataSource dataSource;
+    private DataSource dataSource;
 
     @Test
     public void openConnectionTest() throws DatabaseException, SQLException {
-        Connection connection = ConnectionPool.getConnection();
+        Connection connection = dataSource.getConnection();
         Assert.assertNotNull("connection does not exist", connection);
         Assert.assertFalse("connection must not be closed", connection.isClosed());
         Assert.assertFalse("connection must not be read only", connection.isReadOnly());

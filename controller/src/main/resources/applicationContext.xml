@@ -9,7 +9,7 @@
     <context:annotation-config />
     <context:spring-configured/>
 
-    <import resource="classpath:daoContext.xml"/>
+    <import resource="classpath:dao-context.xml"/>
     <import resource="classpath:service.xml"/>
     <import resource="classpath:database.xml"/>
 

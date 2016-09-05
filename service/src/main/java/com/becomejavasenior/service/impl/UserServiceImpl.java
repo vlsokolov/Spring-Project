@@ -8,11 +8,13 @@ import com.becomejavasenior.jdbc.exceptions.DatabaseException;
 import com.becomejavasenior.service.UserService;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Service
 public class UserServiceImpl implements UserService {
     private static final Logger LOG = Logger.getLogger(UserServiceImpl.class.getName());
 

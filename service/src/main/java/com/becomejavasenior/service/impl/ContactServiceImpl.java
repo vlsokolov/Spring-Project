@@ -5,6 +5,7 @@ import com.becomejavasenior.jdbc.entity.*;
 import com.becomejavasenior.jdbc.exceptions.DatabaseException;
 import com.becomejavasenior.jdbc.impl.*;
 import com.becomejavasenior.service.ContactService;
+import org.junit.Before;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -69,7 +70,7 @@ public class ContactServiceImpl implements ContactService {
 
     public ContactServiceImpl() {
         //todo replace with current user
-        currentUser = (User) userDAO;
+        currentUser = new User();
         currentUser.setId(1);
     }
 

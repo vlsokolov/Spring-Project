@@ -1,9 +1,6 @@
 package com.becomejavasenior.jdbc.impl;
 
 import com.becomejavasenior.entity.*;
-import com.becomejavasenior.jdbc.ConnectionPool;
-import com.becomejavasenior.jdbc.entity.DealDAO;
-import com.becomejavasenior.jdbc.factory.PostgresDAOFactory;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -136,7 +133,6 @@ public class DealDAOTest extends BasicJdbcTemplateTest{
         dealDAO.delete(dealTestId);
         dealList = dealDAO.getAll();
         Assert.assertEquals("Deal delete test failed", 1, oldListSize - dealList.size());
-     //   Assert.assertNull("Deal delete test failed", dealDAO.getById(dealTestId));
     }
 
     @Test

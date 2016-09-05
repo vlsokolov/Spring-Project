@@ -1,9 +1,6 @@
 package com.becomejavasenior.jdbc.impl;
 
 import com.becomejavasenior.entity.*;
-import com.becomejavasenior.jdbc.ConnectionPool;
-import com.becomejavasenior.jdbc.entity.FileDAO;
-import com.becomejavasenior.jdbc.factory.PostgresDAOFactory;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -20,21 +17,13 @@ public class FileDAOTest extends BasicJdbcTemplateTest{
 
     private static final String DEFAULT_FILENAME = "DefaultFilename.ext";
     private static final Date DEFAULT_DATE = new Timestamp(new Date().getTime());
-    private final PostgresDAOFactory factory;
-    private FileDAO fileDAO;
     private User userForFileTest;
     private int fileTestId;
-
-
-    public FileDAOTest() {
-        factory = new PostgresDAOFactory();
-        userForFileTest = factory.getUserDAO().getById(1);
-        fileDAO = factory.getFileDAO();
-    }
 
     @Before
     public void setUp() {
         fileTestId = 0;
+        userForFileTest = userDAO.getById(1);
     }
 
     @After
@@ -83,10 +72,10 @@ public class FileDAOTest extends BasicJdbcTemplateTest{
     public void testUpdate() throws SQLException {
         String updatedName = "UpdatedFilename.ext";
         Timestamp updatedCreateDate = new Timestamp(1L << 41);
-        User userForTestUpdate = factory.getUserDAO().getById(2);
+        User userForTestUpdate = userDAO.getById(2);
         Company companyForTestUpdate = companyDAO.getById(2);
         Contact contactForTestUpdate = contactDAO.getById(2);
-        Deal dealForTestUpdate = factory.getDealDAO().getById(2);
+        Deal dealForTestUpdate = dealDAO.getById(2);
 
         File fileTest = new File();
         fileTest.setFileName(DEFAULT_FILENAME);
@@ -135,7 +124,6 @@ public class FileDAOTest extends BasicJdbcTemplateTest{
         fileDAO.delete(fileTestId);
         fileList = fileDAO.getAll();
         Assert.assertEquals("File delete test failed", 1, oldListSize - fileList.size());
-      //  Assert.assertNull("File delete test failed", fileDAO.getById(fileTestId));
     }
 
     @Test

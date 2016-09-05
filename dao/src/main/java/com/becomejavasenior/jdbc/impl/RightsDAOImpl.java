@@ -117,9 +117,6 @@ public class RightsDAOImpl extends AbstractDAO<Rights> implements RightsDAO {
 
     @Override
     public List<Rights> getRightsByUserId(int userId) {
-        PreparedStatementSetter preparedStatementSetter = statement -> {
-            statement.setInt(1, userId);
-        };
-        return jdbcTemplate.query(SELECT_SQL + " AND user_id = ?", RightsRowMapper, preparedStatementSetter);
+        return jdbcTemplate.query(SELECT_SQL + " AND user_id = ?", RightsRowMapper, userId);
     }
 }

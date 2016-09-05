@@ -2,7 +2,6 @@ package com.becomejavasenior.jdbc.impl;
 
 import com.becomejavasenior.entity.Language;
 import com.becomejavasenior.entity.User;
-import com.becomejavasenior.jdbc.factory.PostgresDAOFactory;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -19,18 +18,13 @@ public class UserDAOTest extends BasicJdbcTemplateTest{
     private static final String DEFAULT_EMAIL = "default@email.org";
     private static final String DEFAULT_PASSWORD = "DefaultPassword123";
 
-    private final PostgresDAOFactory factory;
     private Language defaultLanguage;
     private int userTestId;
-
-    public UserDAOTest() {
-        factory = new PostgresDAOFactory();
-        defaultLanguage = factory.getLanguageDAO().getById(1);
-    }
 
     @Before
     public void setUp() {
         userTestId = 0;
+        defaultLanguage = languageDAO.getById(1);
     }
 
     @After
@@ -79,7 +73,7 @@ public class UserDAOTest extends BasicJdbcTemplateTest{
         String updatedName = "Updated Name";
         String updatedEmail = "updated@email.org";
         String updatedPassword = "UpdatedPassWord_13";
-        Language updatedLanguage = factory.getLanguageDAO().getById(2);
+        Language updatedLanguage = languageDAO.getById(2);
         String updatedPhone = "UpdatedPhone 345-67-89";
         String updatedMobilePhone = "UpdatedMobilePhone 567-89-01";
         String updatedNote = "This is short story\nabout\tUSER";
@@ -133,7 +127,6 @@ public class UserDAOTest extends BasicJdbcTemplateTest{
         userDAO.delete(userTestId);
         userList = userDAO.getAll();
         Assert.assertEquals("User delete test failed", 1, oldListSize - userList.size());
-     //   Assert.assertNull("User delete test failed", userDAO.getById(userTestId));
     }
 
     @Test

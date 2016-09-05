@@ -3,9 +3,6 @@ package com.becomejavasenior.jdbc.impl;
 import com.becomejavasenior.entity.Rights;
 import com.becomejavasenior.entity.SubjectType;
 import com.becomejavasenior.entity.User;
-import com.becomejavasenior.jdbc.ConnectionPool;
-import com.becomejavasenior.jdbc.entity.RightsDAO;
-import com.becomejavasenior.jdbc.factory.PostgresDAOFactory;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -16,29 +13,22 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
-public class RightsDAOTest {
+public class RightsDAOTest extends BasicJdbcTemplateTest{
 
-    private final PostgresDAOFactory factory;
-    private RightsDAO rightsDAO;
     private User defaultUser;
     private SubjectType defaultSubjectType = SubjectType.DEAL;
     private int rightsTestId;
 
-    public RightsDAOTest() {
-        factory = new PostgresDAOFactory();
-        defaultUser = factory.getUserDAO().getById(1);
-        rightsDAO = factory.getRightsDAO();
-    }
-
     @Before
     public void setUp() {
         rightsTestId = 0;
+        defaultUser = userDAO.getById(1);
     }
 
     @After
     public void tearDown() throws SQLException {
         if (rightsTestId > 0) {
-            try (Connection connection = ConnectionPool.getConnection();
+            try (Connection connection = dataSource.getConnection();
                  Statement statement = connection.createStatement()) {
                 statement.executeUpdate("DELETE FROM rights WHERE id = " + Integer.toString(rightsTestId));
             } catch (SQLException e) {
@@ -76,7 +66,7 @@ public class RightsDAOTest {
 
     @Test
     public void testUpdate() throws SQLException {
-        User updatedUser = factory.getUserDAO().getById(2);
+        User updatedUser = userDAO.getById(2);
         SubjectType updatedSubjectType = SubjectType.COMPANY;
 
         Rights rightsTest = new Rights();
@@ -120,7 +110,6 @@ public class RightsDAOTest {
         rightsDAO.delete(rightsTestId);
         rightsList = rightsDAO.getAll();
         Assert.assertEquals("Rights delete test failed", 1, oldListSize - rightsList.size());
-        Assert.assertNull("Rights delete test failed", rightsDAO.getById(rightsTestId));
     }
 
     @Test

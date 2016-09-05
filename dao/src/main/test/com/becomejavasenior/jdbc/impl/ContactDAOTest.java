@@ -116,8 +116,6 @@ public class ContactDAOTest extends BasicJdbcTemplateTest{
         Assert.assertEquals("Contact email update failed", updatedEmail, updatedContact.getEmail());
         Assert.assertEquals("Date of contact creation update failed", updatedCreateDate, updatedContact.getDateCreate());
         Assert.assertEquals("Contact creator update failed", userForTestUpdate.getId(), updatedContact.getCreator().getId());
-//        Assert.assertEquals("Contact responsible user update failed", userForTestUpdate.getId(), updatedContact.getResponsibleUser().getId());
-//        Assert.assertEquals("Contact link to Company update failed", companyForTestUpdate.getId(), updatedContact.getCompany().getId());
     }
 
     @Test

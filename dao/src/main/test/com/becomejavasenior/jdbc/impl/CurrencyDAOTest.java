@@ -72,7 +72,6 @@ public class CurrencyDAOTest extends BasicJdbcTemplateTest{
 
         currencyTest.setName(updatedName);
         currencyTest.setActive(true);
-        currencyTest.setId(currencyTestId);
 
         currencyDAO.update(currencyTest);
 

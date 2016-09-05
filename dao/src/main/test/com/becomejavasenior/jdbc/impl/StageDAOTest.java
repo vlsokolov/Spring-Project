@@ -1,9 +1,6 @@
 package com.becomejavasenior.jdbc.impl;
 
 import com.becomejavasenior.entity.Stage;
-import com.becomejavasenior.jdbc.ConnectionPool;
-import com.becomejavasenior.jdbc.entity.StageDAO;
-import com.becomejavasenior.jdbc.factory.PostgresDAOFactory;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -14,16 +11,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
-public class StageDAOTest {
+public class StageDAOTest extends BasicJdbcTemplateTest{
 
-    private StageDAO stageDAO;
     private static final String DEFAULT_NAME = "Default Name";
     private int stageTestId;
-
-    public StageDAOTest() {
-        PostgresDAOFactory factory = new PostgresDAOFactory();
-        stageDAO = factory.getStageDAO();
-    }
 
     @Before
     public void setUp() {
@@ -33,7 +24,7 @@ public class StageDAOTest {
     @After
     public void tearDown() throws SQLException {
         if (stageTestId > 0) {
-            try (Connection connection = ConnectionPool.getConnection();
+            try (Connection connection = dataSource.getConnection();
                  Statement statement = connection.createStatement()) {
                 statement.executeUpdate("DELETE FROM stage_deals WHERE id = " + Integer.toString(stageTestId));
             } catch (SQLException e) {
@@ -99,7 +90,6 @@ public class StageDAOTest {
         stageDAO.delete(stageTestId);
         stageList = stageDAO.getAll();
         Assert.assertEquals("Stage delete test failed", 1, oldListSize - stageList.size());
-        Assert.assertNull("Stage delete test failed", stageDAO.getById(stageTestId));
     }
 
     @Test

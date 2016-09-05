@@ -76,7 +76,6 @@ public class File implements Serializable {
     public byte[] getFile() {
         return file.clone();
     }
-
     public void setFile(byte[] file) {
         this.file = file.clone();
     }

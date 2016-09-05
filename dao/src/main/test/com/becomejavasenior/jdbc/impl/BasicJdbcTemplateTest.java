@@ -8,7 +8,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.sql.DataSource;
 
-
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration("classpath:dao-context.xml")
 public class BasicJdbcTemplateTest {

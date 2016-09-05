@@ -1,9 +1,6 @@
 package com.becomejavasenior.jdbc.impl;
 
 import com.becomejavasenior.entity.*;
-import com.becomejavasenior.jdbc.ConnectionPool;
-import com.becomejavasenior.jdbc.entity.NoteDAO;
-import com.becomejavasenior.jdbc.factory.PostgresDAOFactory;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -20,21 +17,13 @@ public class NoteDAOTest extends BasicJdbcTemplateTest{
 
     private static final String DEFAULT_NOTE_TEXT = "Default Note Text";
     private static final Date DEFAULT_DATE = new Timestamp(new Date().getTime());
-    private final PostgresDAOFactory factory;
-    private NoteDAO noteDAO;
     private User userForNoteTest;
     private int noteTestId;
-
-
-    public NoteDAOTest() {
-        factory = new PostgresDAOFactory();
-        userForNoteTest = factory.getUserDAO().getById(1);
-        noteDAO = factory.getNoteDAO();
-    }
 
     @Before
     public void setUp() {
         noteTestId = 0;
+        userForNoteTest = userDAO.getById(1);
     }
 
     @After
@@ -83,10 +72,10 @@ public class NoteDAOTest extends BasicJdbcTemplateTest{
     public void testUpdate() throws SQLException {
         String updatedNoteText = "Updated\nNote\nText";
         Timestamp updatedCreateDate = new Timestamp(1L << 41);
-        User userForTestUpdate = factory.getUserDAO().getById(2);
+        User userForTestUpdate = userDAO.getById(2);
         Company companyForTestUpdate = companyDAO.getById(2);
         Contact contactForTestUpdate = contactDAO.getById(2);
-        Deal dealForTestUpdate = factory.getDealDAO().getById(2);
+        Deal dealForTestUpdate = dealDAO.getById(2);
 
         Note noteTest = new Note();
         noteTest.setNote(DEFAULT_NOTE_TEXT);
@@ -129,7 +118,6 @@ public class NoteDAOTest extends BasicJdbcTemplateTest{
         noteDAO.delete(noteTestId);
         noteList = noteDAO.getAll();
         Assert.assertEquals("Note delete test failed", 1, oldListSize - noteList.size());
-      //  Assert.assertNull("Note delete test failed", noteDAO.getById(noteTestId));
     }
 
     @Test

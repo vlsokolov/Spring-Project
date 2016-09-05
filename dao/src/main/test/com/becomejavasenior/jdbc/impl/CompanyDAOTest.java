@@ -139,7 +139,6 @@ public class CompanyDAOTest extends BasicJdbcTemplateTest{
         companyDAO.delete(companyTestId);
         companyList = companyDAO.getAll();
         Assert.assertEquals("Company delete test failed", 1, oldListSize - companyList.size());
-//        Assert.assertNull("Company delete test failed", companyDAO.getById(companyTestId));
     }
 
     @Test

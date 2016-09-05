@@ -2,9 +2,6 @@ package com.becomejavasenior.jdbc.impl;
 
 import com.becomejavasenior.entity.User;
 import com.becomejavasenior.entity.VisitHistory;
-import com.becomejavasenior.jdbc.ConnectionPool;
-import com.becomejavasenior.jdbc.entity.VisitHistoryDAO;
-import com.becomejavasenior.jdbc.factory.PostgresDAOFactory;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -17,29 +14,22 @@ import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 
-public class VisitHistoryDAOTest {
+public class VisitHistoryDAOTest extends BasicJdbcTemplateTest{
 
     private static final Timestamp DEFAULT_DATE_TIME = new Timestamp(new Date().getTime());
-    private final PostgresDAOFactory factory;
-    private final User defaultUser;
-    private VisitHistoryDAO visitHistoryDAO;
+    private User defaultUser;
     private int visitHistoryTestId;
-
-    public VisitHistoryDAOTest() {
-        factory = new PostgresDAOFactory();
-        defaultUser = factory.getUserDAO().getById(1);
-        visitHistoryDAO = factory.getVisitHistoryDAO();
-    }
 
     @Before
     public void setUp() {
         visitHistoryTestId = 0;
+        defaultUser = userDAO.getById(1);
     }
 
     @After
     public void tearDown() throws SQLException {
         if (visitHistoryTestId > 0) {
-            try (Connection connection = ConnectionPool.getConnection();
+            try (Connection connection = dataSource.getConnection();
                  Statement statement = connection.createStatement()) {
                 statement.executeUpdate("DELETE FROM visit_history WHERE id = " + Integer.toString(visitHistoryTestId));
             } catch (SQLException e) {
@@ -77,7 +67,7 @@ public class VisitHistoryDAOTest {
 
     @Test
     public void testUpdate() throws SQLException {
-        User updatedUser = factory.getUserDAO().getById(2);
+        User updatedUser = userDAO.getById(2);
         Timestamp updatedDateTime = new Timestamp(1L << 41);
         String updatedIpAddress = "111.222.025.222";
         String updatedBrowser = "Updated Browser ID String";
@@ -117,7 +107,6 @@ public class VisitHistoryDAOTest {
         visitHistoryDAO.delete(visitHistoryTestId);
         visitHistoryList = visitHistoryDAO.getAll();
         Assert.assertEquals("VisitHistory delete test failed", 1, oldListSize - visitHistoryList.size());
-        Assert.assertNull("VisitHistory delete test failed", visitHistoryDAO.getById(visitHistoryTestId));
     }
 
     @Test

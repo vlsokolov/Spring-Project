@@ -1,9 +1,6 @@
 package com.becomejavasenior.jdbc.impl;
 
 import com.becomejavasenior.entity.Language;
-import com.becomejavasenior.jdbc.ConnectionPool;
-import com.becomejavasenior.jdbc.entity.LanguageDAO;
-import com.becomejavasenior.jdbc.factory.PostgresDAOFactory;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -14,17 +11,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
-public class LanguageDAOTest {
+public class LanguageDAOTest extends BasicJdbcTemplateTest{
 
-    private LanguageDAO languageDAO;
     private static final String DEFAULT_NAME = "Default Name";
     private static final String DEFAULT_CODE = "DN";
     private int languageTestId;
-
-    public LanguageDAOTest() {
-        PostgresDAOFactory factory = new PostgresDAOFactory();
-        languageDAO = factory.getLanguageDAO();
-    }
 
     @Before
     public void setUp() {
@@ -34,7 +25,7 @@ public class LanguageDAOTest {
     @After
     public void tearDown() throws SQLException {
         if (languageTestId > 0) {
-            try (Connection connection = ConnectionPool.getConnection();
+            try (Connection connection = dataSource.getConnection();
                  Statement statement = connection.createStatement()) {
                 statement.executeUpdate("DELETE FROM language WHERE id = " + Integer.toString(languageTestId));
             } catch (SQLException e) {
@@ -106,7 +97,6 @@ public class LanguageDAOTest {
         languageDAO.delete(languageTestId);
         languageList = languageDAO.getAll();
         Assert.assertEquals("Language delete test failed", 1, oldListSize - languageList.size());
-        Assert.assertNull("Language delete test failed", languageDAO.getById(languageTestId));
     }
 
     @Test

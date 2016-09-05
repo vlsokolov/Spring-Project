@@ -1,8 +1,6 @@
 package com.becomejavasenior.jdbc.impl;
 
-import com.becomejavasenior.jdbc.entity.CompanyDAO;
-import com.becomejavasenior.jdbc.entity.ContactDAO;
-import com.becomejavasenior.jdbc.entity.UserDAO;
+import com.becomejavasenior.jdbc.entity.*;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
@@ -26,4 +24,34 @@ public class BasicJdbcTemplateTest {
 
     @Autowired
     protected UserDAO userDAO;
+
+    @Autowired
+    protected DealDAO dealDAO;
+
+    @Autowired
+    protected FileDAO fileDAO;
+
+    @Autowired
+    protected LanguageDAO languageDAO;
+
+    @Autowired
+    protected NoteDAO noteDAO;
+
+    @Autowired
+    protected RightsDAO rightsDAO;
+
+    @Autowired
+    protected StageDAO stageDAO;
+
+    @Autowired
+    protected TagDAO tagDAO;
+
+    @Autowired
+    protected TaskDAO taskDAO;
+
+    @Autowired
+    protected VisitHistoryDAO visitHistoryDAO;
+
+    @Autowired
+    protected CurrencyDAO currencyDAO;
 }

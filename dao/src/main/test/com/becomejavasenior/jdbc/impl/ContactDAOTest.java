@@ -4,9 +4,6 @@ import com.becomejavasenior.entity.Company;
 import com.becomejavasenior.entity.Contact;
 import com.becomejavasenior.entity.TypeOfPhone;
 import com.becomejavasenior.entity.User;
-import com.becomejavasenior.jdbc.ConnectionPool;
-import com.becomejavasenior.jdbc.entity.ContactDAO;
-import com.becomejavasenior.jdbc.factory.PostgresDAOFactory;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -21,19 +18,10 @@ import java.util.List;
 
 public class ContactDAOTest extends BasicJdbcTemplateTest{
 
-    private final PostgresDAOFactory factory;
-   // private ContactDAO contactDAO;
     private User userForContactTest;
     private static final String DEFAULT_NAME = "Default Name";
     private static final Date DEFAULT_DATE = new Timestamp(new Date().getTime());
     private int contactTestId;
-
-
-    public ContactDAOTest() {
-        factory = new PostgresDAOFactory();
-       // userForContactTest = factory.getUserDAO().getById(1);
-       // contactDAO = factory.getContactDAO();
-    }
 
     @Before
     public void setUp() {

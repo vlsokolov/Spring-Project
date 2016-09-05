@@ -42,6 +42,7 @@ public class LanguageDAOImpl extends AbstractDAO<Language> implements LanguageDA
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(preparedStatementCreator, keyHolder);
         int id = (int) keyHolder.getKey().longValue();
+        language.setId(id);
         return id;
     }
 

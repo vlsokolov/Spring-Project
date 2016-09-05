@@ -60,6 +60,7 @@ public class RightsDAOImpl extends AbstractDAO<Rights> implements RightsDAO {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(preparedStatementCreator, keyHolder);
         int id = (int) keyHolder.getKey().longValue();
+        rights.setId(id);
         return id;
     }
 

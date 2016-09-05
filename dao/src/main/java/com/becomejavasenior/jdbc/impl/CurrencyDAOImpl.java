@@ -42,6 +42,7 @@ public class CurrencyDAOImpl extends AbstractDAO<Currency> implements CurrencyDA
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(preparedStatementCreator, keyHolder);
         int id = (int) keyHolder.getKey().longValue();
+        currency.setId(id);
         return id;
     }
 
@@ -49,8 +50,9 @@ public class CurrencyDAOImpl extends AbstractDAO<Currency> implements CurrencyDA
     public void update(Currency currency) {
 
         if (currency.getId() == 0) {
-            throw new DatabaseException("contact must be created before update");
+            throw new DatabaseException("currency must be created before update");
         }
+
         PreparedStatementSetter preparedStatementSetter = statement -> {
             statement.setString(1, currency.getName());
             statement.setBoolean(2, currency.isActive());

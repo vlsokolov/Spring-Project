@@ -50,6 +50,7 @@ public class FileDAOImpl extends AbstractDAO<File> implements FileDAO {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(preparedStatementCreator, keyHolder);
         int id = (int) keyHolder.getKey().longValue();
+        file.setId(id);
         return id;
     }
 

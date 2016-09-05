@@ -157,6 +157,7 @@ public class DealDAOImpl extends AbstractDAO<Deal> implements DealDAO {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(preparedStatementCreator, keyHolder);
         int id = (int) keyHolder.getKey().longValue();
+        deal.setId(id);
         return id;
     }
 

@@ -88,6 +88,7 @@ public class TaskDAOImpl extends AbstractDAO<Task> implements TaskDAO {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(preparedStatementCreator, keyHolder);
         int id = (int) keyHolder.getKey().longValue();
+        task.setId(id);
         return id;
     }
 

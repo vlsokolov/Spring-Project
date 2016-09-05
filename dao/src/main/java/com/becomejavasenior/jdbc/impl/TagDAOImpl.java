@@ -44,6 +44,7 @@ public class TagDAOImpl extends AbstractDAO<Tag> implements TagDAO {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(preparedStatementCreator, keyHolder);
         int id = (int) keyHolder.getKey().longValue();
+        tag.setId(id);
         return id;
     }
 

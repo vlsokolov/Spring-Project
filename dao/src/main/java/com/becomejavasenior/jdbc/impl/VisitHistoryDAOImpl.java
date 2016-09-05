@@ -50,6 +50,7 @@ public class VisitHistoryDAOImpl extends AbstractDAO<VisitHistory> implements Vi
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(preparedStatementCreator, keyHolder);
         int id = (int) keyHolder.getKey().longValue();
+        visitHistory.setId(id);
         return id;
     }
 

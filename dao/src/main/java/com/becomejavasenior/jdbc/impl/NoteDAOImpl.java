@@ -46,6 +46,7 @@ public class NoteDAOImpl extends AbstractDAO<Note> implements NoteDAO {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(preparedStatementCreator, keyHolder);
         int id = (int) keyHolder.getKey().longValue();
+        note.setId(id);
         return id;
     }
 

@@ -21,25 +21,17 @@ public class DealDAOTest extends BasicJdbcTemplateTest{
 
     private static final String DEFAULT_NAME = "Default Name";
     private static final Date DEFAULT_DATE = new Timestamp(new Date().getTime());
-    private final PostgresDAOFactory factory;
-    private DealDAO dealDAO;
     private User userForDealTest;
     private Stage stageForDealTest;
     private Company companyForDealTest;
     private int dealTestId;
 
-
-    public DealDAOTest() {
-        factory = new PostgresDAOFactory();
-        userForDealTest = factory.getUserDAO().getById(1);
-        stageForDealTest = factory.getStageDAO().getById(1);
-        companyForDealTest = companyDAO.getById(1);
-        dealDAO = factory.getDealDAO();
-    }
-
     @Before
     public void setUp() {
         dealTestId = 0;
+        userForDealTest = userDAO.getById(1);
+        stageForDealTest = stageDAO.getById(1);
+        companyForDealTest = companyDAO.getById(1);
     }
 
     @After
@@ -90,9 +82,9 @@ public class DealDAOTest extends BasicJdbcTemplateTest{
     public void testUpdate() throws SQLException {
         String updatedName = "Updated Name";
         Timestamp updatedCreateDate = new Timestamp(1L << 41);
-        User updatedUser = factory.getUserDAO().getById(2);
+        User updatedUser = userDAO.getById(2);
         Company updatedCompany = companyDAO.getById(2);
-        Stage updatedStage = factory.getStageDAO().getById(2);
+        Stage updatedStage = stageDAO.getById(2);
         Contact updatedContact = contactDAO.getById(2);
 
         Deal dealTest = new Deal();

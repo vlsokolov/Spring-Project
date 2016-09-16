@@ -13,7 +13,7 @@ import javax.servlet.http.*;
 import java.io.IOException;
 import java.util.Map;
 
-@WebServlet(name = "LoginServlet", urlPatterns = "/login")
+//@WebServlet(name = "LoginServlet", urlPatterns = "/login")
 public class LoginServlet extends HttpServlet {
 
     private ConfigurableApplicationContext context;
